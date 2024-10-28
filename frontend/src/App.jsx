@@ -1,13 +1,49 @@
+// App.jsx
 import React from "react";
-import { Button } from "@material-tailwind/react";
+import { Outlet } from "react-router-dom";
+import { Footer, Sidebar, Bottombar, Header } from "./components/components.js";
+import { ToastContainer, Bounce } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-const App = () => {
+function App() {
   return (
-    <div>
-      <h1 className="text-3xl font-bold underline">Hello world!</h1>
-      <Button>Button</Button>
+    <div className="flex flex-col h-screen">
+      {/* Header for all devices */}
+      <Header />
+
+      <div className="flex flex-grow overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar />
+
+        {/* Main Content Area */}
+        <div className="flex flex-col flex-grow">
+          <main className="flex-grow p-4 overflow-y-auto bg-gray-50">
+            <Outlet />
+          </main>
+          {/* Footer for each main content area */}
+          <Footer className="flex-shrink-0" />
+        </div>
+      </div>
+
+      {/* Bottom Navigation for small devices */}
+      <Bottombar />
+
+      {/* Toast Notifications */}
+      <ToastContainer
+        position="top-center"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        transition={Bounce}
+      />
     </div>
   );
-};
+}
 
 export default App;
