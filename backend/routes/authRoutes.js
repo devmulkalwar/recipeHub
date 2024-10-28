@@ -1,17 +1,28 @@
-// routes/authRoutes.js
-import express from 'express';
-import { loginUser, logoutUser, registerUser } from '../controllers/authController.js';
-
+import express from "express";
+import {
+  login,
+  logout,
+  signup,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
+  checkAuth,
+} from "../controllers/authController.js";
+import  verifyToken  from "../middlewares/authMiddleware.js";
+import {upload} from "../middlewares/multerMiddleware.js";
 
 const router = express.Router();
 
-// Route for user registration
-router.post('/register', registerUser);
+router.get("/check-auth", verifyToken, checkAuth);
 
-// Route for user login
-router.post('/login', loginUser);
+router.post("/signup", upload.single("profileImage"), signup);
 
-// Route for user logout
-router.post('/logout', logoutUser);
+router.post("/login", login);
+router.post("/logout", logout);
+
+router.post("/verify-email", verifyEmail);
+router.post("/forgot-password", forgotPassword);
+
+router.post("/reset-password/:token", resetPassword);
 
 export default router;
