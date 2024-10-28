@@ -1,28 +1,31 @@
 import React from "react";
 import { Carousel, Button, Typography } from "@material-tailwind/react";
-import { CategoryTabs } from "../components/CategoryTabs"; // Ensure this path is correct
-import RecipeCard from "../components/RecipeCard"; // Adjust the path as necessary
+import RecipeCategories from "../components/RecipeCategories";
+import RecipeCard from "../components/RecipeCard";
 import { Link } from "react-router-dom";
 
 const Home = () => {
   const carouselItems = [
     {
-      image: "https://via.placeholder.com/1600x900?text=Delicious+Recipes+to+Try!",
+      image:
+        "https://via.placeholder.com/1600x900?text=Delicious+Recipes+to+Try!",
       caption: "Delicious Recipes to Try!",
     },
     {
-      image: "https://via.placeholder.com/1600x900?text=Healthy+and+Nutritious+Meals!",
+      image:
+        "https://via.placeholder.com/1600x900?text=Healthy+and+Nutritious+Meals!",
       caption: "Healthy and Nutritious Meals!",
     },
     {
-      image: "https://via.placeholder.com/1600x900?text=Quick+and+Easy+Cooking!",
+      image:
+        "https://via.placeholder.com/1600x900?text=Quick+and+Easy+Cooking!",
       caption: "Quick and Easy Cooking!",
     },
   ];
 
   const recipes = [
     {
-      image: "https://via.placeholder.com/400x300?text=Recipe+1", // Placeholder image
+      image: "https://via.placeholder.com/400x300?text=Recipe+1",
       title: "Spaghetti Carbonara",
       cookingTime: 25,
       difficulty: "Easy",
@@ -31,7 +34,7 @@ const Home = () => {
       createdAt: "2024-10-28T10:00:00Z",
     },
     {
-      image: "https://via.placeholder.com/400x300?text=Recipe+2", // Placeholder image
+      image: "https://via.placeholder.com/400x300?text=Recipe+2",
       title: "Chicken Tikka Masala",
       cookingTime: 40,
       difficulty: "Medium",
@@ -39,49 +42,14 @@ const Home = () => {
       username: "ChefRaj",
       createdAt: "2024-10-27T14:30:00Z",
     },
-    {
-      image: "https://via.placeholder.com/400x300?text=Recipe+3", // Placeholder image
-      title: "Beef Tacos",
-      cookingTime: 30,
-      difficulty: "Medium",
-      tags: ["Mexican", "Tacos", "Quick"],
-      username: "ChefLuis",
-      createdAt: "2024-10-26T18:15:00Z",
-    },
-    {
-      image: "https://via.placeholder.com/400x300?text=Recipe+4", // Placeholder image
-      title: "Vegetable Stir Fry",
-      cookingTime: 20,
-      difficulty: "Easy",
-      tags: ["Vegan", "Healthy", "Quick"],
-      username: "ChefAnya",
-      createdAt: "2024-10-25T12:45:00Z",
-    },
-    {
-      image: "https://via.placeholder.com/400x300?text=Recipe+5", // Placeholder image
-      title: "Chocolate Cake",
-      cookingTime: 60,
-      difficulty: "Hard",
-      tags: ["Dessert", "Baking", "Sweet"],
-      username: "ChefEmma",
-      createdAt: "2024-10-24T09:20:00Z",
-    },
-    {
-      image: "https://via.placeholder.com/400x300?text=Recipe+6", // Placeholder image
-      title: "Caesar Salad",
-      cookingTime: 15,
-      difficulty: "Easy",
-      tags: ["Salad", "Healthy", "Quick"],
-      username: "ChefJohn",
-      createdAt: "2024-10-23T11:00:00Z",
-    },
+    // additional recipe objects...
   ];
 
   return (
-    <div className="bg-gray-50">
+    <div className="flex-grow flex flex-col items-center bg-gray-50">
       {/* Carousel Section */}
-      <div className="relative">
-        <Carousel className="h-96" autoplay>
+      <div className="w-full max-w-screen-lg">
+        <Carousel className="h-96" autoplay loop>
           {carouselItems.map((item, index) => (
             <div key={index} className="relative h-full w-full">
               <img
@@ -90,10 +58,16 @@ const Home = () => {
                 className="w-full h-full object-cover"
               />
               <div className="absolute bottom-10 left-10 bg-orange-100 p-4 rounded-lg shadow-lg">
-                <Typography variant="h3" className="text-gray-800">
+                <Typography
+                  variant="h3"
+                  className="text-gray-800 text-sm md:text-2xl"
+                >
                   {item.caption}
                 </Typography>
-                <Button color="orange" className="mt-2">
+                <Button
+                  color="orange"
+                  className="mt-2 px-4 py-2 text-xs md:text-sm"
+                >
                   Explore Recipes
                 </Button>
               </div>
@@ -103,36 +77,47 @@ const Home = () => {
       </div>
 
       {/* Categories Section */}
-      <section className="py-10 px-4 bg-orange-100">
-        <div>
-          <Typography variant="h2" className="text-center text-gray-800 mb-8">
+      <section className="w-full max-w-screen-lg  py-10  bg-orange-100">
+        <div className="flex justify-between items-center px-6">
+          <Typography
+            variant="h2"
+            className="text-gray-800 text-lg md:text-2xl"
+          >
             Recipe Categories
           </Typography>
-          <Link to="/recipes" className="text-blue-500 hover:underline">
-            See all
-          </Link>
         </div>
-        <CategoryTabs />
+       <RecipeCategories/>
       </section>
 
       {/* Featured Recipes Section */}
-      <section className="py-10 px-4">
-        <Typography variant="h2" className="text-center text-gray-800 mb-8">
+      <section className="w-full max-w-screen-lg my-8 ">
+        <Typography
+          variant="h2"
+          className="text-left text-gray-800 mb-8 text-lg md:text-2xl"
+        >
           Featured Recipes
         </Typography>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {recipes.map((recipe, index) => (
-            <RecipeCard key={index} recipe={recipe} />
-          ))}
+
+        <div className="min-w-[320px] max-w-screen-lg flex justify-center items-center w-full py-6">
+          <div className="w-full  grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {recipes.map((recipe, index) => (
+              <RecipeCard key={index} recipe={recipe} />
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Call to Action Section */}
-      <section className="py-10 px-4 bg-gray-200 text-center">
-        <Typography variant="h4" className="text-gray-800 mb-4">
+      <section className="w-full max-w-screen-lg bg-gray-200 text-center py-10">
+        <Typography
+          variant="h4"
+          className="text-gray-800 mb-4 text-lg md:text-2xl"
+        >
           Join Our Recipe Community!
         </Typography>
-        <Button color="orange">Sign Up Now</Button>
+        <Button color="orange" className="px-4 py-2 text-xs md:text-sm">
+          Sign Up Now
+        </Button>
       </section>
     </div>
   );

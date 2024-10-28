@@ -17,11 +17,11 @@ function App() {
 
         {/* Main Content Area */}
         <div className="flex flex-col flex-grow">
-          <main className="flex-grow p-4 overflow-y-auto bg-gray-50">
+          <main className="flex-grow overflow-y-auto bg-gray-50">
             <Outlet />
-          </main>
           {/* Footer for each main content area */}
           <Footer className="flex-shrink-0" />
+          </main>
         </div>
       </div>
 
