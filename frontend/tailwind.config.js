@@ -1,20 +1,10 @@
 import daisyui from "daisyui";
+import withMT from "@material-tailwind/react/utils/withMT";
+
 /** @type {import('tailwindcss').Config} */
-export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+export default withMT({
+  content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
   theme: {
     extend: {},
   },
-  plugins: [daisyui],
-
-  daisyui: {
-    themes: false,
-    darkTheme: "dark",
-    base: true,
-    styled: true,
-    utils: true,
-    prefix: "",
-    logs: true,
-    themeRoot: ":root",
-  },
-};
+});
