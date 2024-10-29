@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CiCircleChevDown } from 'react-icons/ci';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,14 +18,22 @@ const RecipeCategories = () => {
 
   const navigate = useNavigate();
 
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const displayLimit = windowWidth < 768 ? 6 : windowWidth < 1024 ? 10 : 8;
+const iconSize = windowWidth < 768 ? 'text-3xl' : 'text-5xl';
+
   const handleIconClick = () => {
     navigate('/recipes');
   };
 
   const renderCategories = () => {
-    const isMobile = window.innerWidth < 768;
-    const displayLimit = isMobile ? 6 : 10;
-
     return categories.slice(0, displayLimit).map((category, index) => (
       <div key={index} className="flex flex-col items-center text-center">
         <img
@@ -38,11 +46,8 @@ const RecipeCategories = () => {
     ));
   };
 
-  const iconSize = window.innerWidth < 768 ? 'text-3xl' : 'text-5xl';
-
   return (
-    <div className="py-2 px-4">
-      
+    <div className="py-2 px-4">     
       <div className="grid grid-cols-3 gap-3 md:grid-cols-5 lg:flex lg:overflow-x-auto">
         {renderCategories()}
         <div className="col-span-3 md:col-span-5 lg:col-span-1 flex justify-center mt-4 md:mt-6">

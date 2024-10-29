@@ -1,6 +1,6 @@
 import React from "react";
 import { Typography, Button } from "@material-tailwind/react";
-import { AiOutlineLike, AiOutlineComment, AiFillClockCircle } from "react-icons/ai";
+import { AiOutlineLike, AiOutlineComment, AiFillClockCircle, AiOutlineShareAlt } from "react-icons/ai";
 import { BookmarkIcon } from "@heroicons/react/24/solid";
 import { Avatar } from "@material-tailwind/react"; // Import Avatar from Material Tailwind
 
@@ -25,10 +25,10 @@ const RecipeCard = ({ recipe }) => {
   return (
     <div className="bg-white  self-center shadow-lg rounded-lg transition-transform transform hover:scale-105 max-w-xs mx-auto"> 
       {/* User Profile Header */}
-      <div className="flex justify-between p-4 border-b border-gray-300">
+      <div className="flex justify-between items-center p-2 border-b border-gray-300">
         <div className="flex items-center">
           <Avatar
-            src={`https://api.hello-avatar.com/adorables/50/${username}.png`} // Using Avatar with user's placeholder image
+            src="https://docs.material-tailwind.com/img/face-2.jpg"// Using Avatar with user's placeholder image
             alt={username}
             className="mr-3"
           />
@@ -38,7 +38,7 @@ const RecipeCard = ({ recipe }) => {
         </div>
 
         {/* Date Created Section */}
-        <div className="flex flex-col p-4 text-gray-500 text-xs md:text-sm">
+        <div className="flex flex-col items-center p-4 text-gray-500 text-xs md:text-sm">
           <span>Posted on</span>
           <span>{new Date(createdAt).toLocaleDateString()}</span>
           {/* Displaying formatted date */}
@@ -90,8 +90,8 @@ const RecipeCard = ({ recipe }) => {
           {/* Added label for better visibility */}
         </button>
         <button className="flex flex-col items-center text-gray-600 hover:text-orange-500 transition">
-          <BookmarkIcon className="text-lg" />
-          <span className="text-xs">Saved</span> 
+          <AiOutlineShareAlt className="text-lg" />
+          <span className="text-xs">Share</span> 
           {/* Added label for better visibility */}
         </button>
       </div>

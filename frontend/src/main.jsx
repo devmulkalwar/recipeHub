@@ -5,7 +5,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@material-tailwind/react";
 
 // pages import
-import { About, Chat, Contact, CreateRecipe, EditRecipe, Error, ForgotPassword, Home, Login, OTPPage, Profile, RecipeDetails, Recipes, ResetPassword, Signup } from "./pages/pages.js";
+import { About, Chat, Contact, CreateRecipe, EditRecipe, Error, ForgotPassword, GetStarted, Home, Login, OTPPage, Profile, RecipeDetails, Recipes, ResetPassword, Signup } from "./pages/pages.js";
 
 
 const router = createBrowserRouter([
@@ -17,6 +17,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <Home />,
+      },
+      {
+        path:"get-started",
+        element: <GetStarted />,
       },
       {
         path: "login",

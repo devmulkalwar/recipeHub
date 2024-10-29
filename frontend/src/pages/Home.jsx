@@ -41,6 +41,14 @@ const Home = () => {
       tags: ["Indian", "Spicy", "Main Course"],
       username: "ChefRaj",
       createdAt: "2024-10-27T14:30:00Z",
+    },{
+      image: "https://via.placeholder.com/400x300?text=Recipe+2",
+      title: "Chicken Tikka Masala",
+      cookingTime: 40,
+      difficulty: "Medium",
+      tags: ["Indian", "Spicy", "Main Course"],
+      username: "ChefRaj",
+      createdAt: "2024-10-27T14:30:00Z",
     },
     // additional recipe objects...
   ];
@@ -93,12 +101,12 @@ const Home = () => {
       <section className="w-full max-w-screen-lg my-8 ">
         <Typography
           variant="h2"
-          className="text-left text-gray-800 mb-8 text-lg md:text-2xl"
+          className="text-left text-gray-800 mb-8 text-lg md:text-2xl  px-4"
         >
           Featured Recipes
         </Typography>
 
-        <div className="min-w-[320px] max-w-screen-lg flex justify-center items-center w-full py-6">
+        <div className="min-w-[320px] max-w-screen-lg flex justify-center items-center w-full py-6  px-4">
           <div className="w-full  grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {recipes.map((recipe, index) => (
               <RecipeCard key={index} recipe={recipe} />

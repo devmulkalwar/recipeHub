@@ -13,4 +13,5 @@ import OTPPage from "./OTPPage.jsx";
 import ResetPassword from "./ResetPassword.jsx";
 import ForgotPassword from "./ForgotPassword.jsx";
 import Chat from './Chat.jsx';
-export { Home, About, Contact, Signup, Login, Profile, Error,Recipes, RecipeDetails, CreateRecipe, EditRecipe, OTPPage, ResetPassword, ForgotPassword ,Chat}
+import GetStarted from './GetStarted.jsx';
+export { Home, About, Contact, Signup, Login, Profile, Error,Recipes, RecipeDetails, CreateRecipe, EditRecipe, OTPPage, ResetPassword, ForgotPassword ,Chat ,GetStarted}

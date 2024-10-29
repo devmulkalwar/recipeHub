@@ -15,14 +15,17 @@ import { IconButton, Typography } from "@material-tailwind/react";
 export function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col space-y-4 p-4 border-r border-gray-200 w-16 md:w-24 lg:w-48 bg-orange-100">
-      <Typography
-        variant="h6"
-        color="orange"
-        className="mb-4 font-bold text-center text-orange-700 lg:text-lg"
-      >
-        RecipeHub
-      </Typography>
-
+      <Link to="/" className="flex items-center justify-center mb-4">
+        <Typography
+          variant="h6"
+          color="orange"
+          className="text-orange-700 font-bold text-center lg:text-lg"
+        >
+          {/* Display "Recipe" and "Hub" stacked on tablets and inline on larger screens */}
+          <span className="block lg:inline">Recipe</span>
+          <span className="block lg:inline">Hub</span>
+        </Typography>
+      </Link>
       <Link to="/" className="flex items-center space-x-2">
         <IconButton variant="text" color="orange">
           <HomeIcon className="h-6 w-6 text-orange-600" />
