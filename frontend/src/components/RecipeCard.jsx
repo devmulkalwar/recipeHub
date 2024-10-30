@@ -57,8 +57,14 @@ const RecipeCard = ({ recipe }) => {
           </Typography>
         </div>
 
-        {/* Cooking Time and Difficulty Badge */}
-        <div className="flex justify-between items-center text-gray-600 mt-2">
+       
+      </div>
+
+      {/* Action Buttons and View Details Button */}
+      <div className="px-4 pb-4 flex gap-2 flex-col mt-auto">
+
+         {/* Cooking Time and Difficulty Badge */}
+         <div className="flex justify-between items-center text-gray-600 mt-2">
           <div className="flex justify-center items-center">
             <AiFillClockCircle className="mr-1" />
             <span>{cookingTime}</span>
@@ -85,10 +91,7 @@ const RecipeCard = ({ recipe }) => {
             ))}
           </div>
         )}
-      </div>
 
-      {/* Action Buttons and View Details Button */}
-      <div className="px-4 pb-4 flex flex-col mt-auto">
         {/* Action Buttons */}
         <div className="flex justify-between items-center">
           <div className="flex items-center">
