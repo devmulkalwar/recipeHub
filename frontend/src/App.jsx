@@ -4,9 +4,12 @@ import { Outlet } from "react-router-dom";
 import { Footer, Sidebar, Bottombar, Header } from "./components/components.js";
 import { ToastContainer, Bounce } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { AuthProvider } from "./contexts/AuthContext.jsx";
+
 
 function App() {
   return (
+    <AuthProvider>
     <div className="flex flex-col h-screen">
       {/* Header for all devices */}
       <Header />
@@ -43,6 +46,7 @@ function App() {
         transition={Bounce}
       />
     </div>
+    </AuthProvider>
   );
 }
 
