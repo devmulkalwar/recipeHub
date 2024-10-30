@@ -7,6 +7,7 @@ import {
   AiFillClockCircle,
 } from "react-icons/ai";
 import { BookmarkIcon } from "@heroicons/react/24/solid";
+import { Link } from "react-router-dom";
 
 const RecipeCard = ({ recipe }) => {
   if (!recipe) {
@@ -14,6 +15,7 @@ const RecipeCard = ({ recipe }) => {
   }
 
   const {
+    id,
     title = "Untitled Recipe",
     cookingTime = "N/A",
     difficulty = "Unknown",
@@ -129,12 +131,14 @@ const RecipeCard = ({ recipe }) => {
         </div>
 
         {/* View Details Button */}
-        <Button
-          variant="filled"
-          className="max-w-full mt-2 text-white bg-orange-500 hover:bg-orange-600"
-        >
-          View Details
-        </Button>
+        <Link to={`/recipe-details/${id}`} className="max-w-full mt-2">
+          <Button
+            variant="filled"
+            className="w-full text-white bg-orange-500 hover:bg-orange-600"
+          >
+            View Details
+          </Button>
+        </Link>
       </div>
     </div>
   );
