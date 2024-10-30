@@ -1,5 +1,16 @@
-// src/fakeData/fakeRecipeData.js
+// src/data/generateFakeData.js
 import { faker } from '@faker-js/faker';
+
+// Define categories with images
+const categories = [
+  { name: "Appetizer", image: faker.image.urlLoremFlickr({ category: 'food' }) },
+  { name: "Main Course", image: faker.image.urlLoremFlickr({ category: 'food' }) },
+  { name: "Dessert", image: faker.image.urlLoremFlickr({ category: 'food' }) },
+  { name: "Salad", image: faker.image.urlLoremFlickr({ category: 'food' }) },
+  { name: "Soup", image: faker.image.urlLoremFlickr({ category: 'food' }) },
+  { name: "Beverage", image: faker.image.urlLoremFlickr({ category: 'food' }) },
+  { name: "Snack", image: faker.image.urlLoremFlickr({ category: 'food' }) },
+];
 
 // Generate fake users
 const generateUsers = (numUsers = 20) => {
@@ -10,15 +21,10 @@ const generateUsers = (numUsers = 20) => {
     email: faker.internet.email(),
     profileImage: faker.image.avatar(),
     bio: faker.lorem.sentence(),
+    createdRecipes: [],
+    savedRecipes: [],
     followers: [],
     following: [],
-    savedRecipes: [],
-    likedRecipes: [],
-    createdRecipes: [], // Will hold IDs of recipes created by this user
-    lastLogin: faker.date.recent(),
-    isVerified: faker.datatype.boolean(),
-    createdAt: faker.date.recent(),
-    updatedAt: faker.date.recent(),
   }));
 };
 
@@ -38,26 +44,27 @@ const generateRecipes = (numRecipes = 50, users = [], comments = []) => {
   return Array.from({ length: numRecipes }, () => {
     const numIngredients = faker.number.int({ min: 3, max: 10 });
     const numInstructions = faker.number.int({ min: 5, max: 20 });
-    const recipeComments = faker.helpers.arrayElements(comments, faker.number.int({ min: 1, max: 5 }));
     const difficulties = ["Easy", "Medium", "Hard"];
-    const randomDifficulty = faker.helpers.arrayElement(difficulties);
+    const cookingTimes = ["Less than 30 min", "30-60 min", "More than 60 min"];
 
-    // Select a user as the creator
+    // Select a random category and creator
+    const randomCategory = faker.helpers.arrayElement(categories);
     const creator = faker.helpers.arrayElement(users);
-    const creatorId = creator.id;
 
     const recipe = {
       id: faker.string.uuid(),
       title: faker.food.dish(),
       description: faker.food.description(),
-      cookingTime: `${faker.number.int({ min: 10, max: 120 })} mins`,
-      difficulty: randomDifficulty,
+      category: randomCategory.name,
+      categoryImage: randomCategory.image,
+      cookingTime: faker.helpers.arrayElement(cookingTimes),
+      difficulty: faker.helpers.arrayElement(difficulties),
       ingredients: Array.from({ length: numIngredients }, () => faker.food.ingredient()),
       instructions: Array.from({ length: numInstructions }, () => faker.lorem.paragraph()),
       likes: faker.number.int({ min: 0, max: 500 }),
-      comments: recipeComments.map(comment => comment.id),
-      createdBy: creatorId,  // Store only creator ID for reference
-      createdByDetails: {    // Store additional details here
+      comments: faker.helpers.arrayElements(comments, faker.number.int({ min: 1, max: 5 })).map(comment => comment.id),
+      createdBy: creator.id,
+      createdByDetails: {
         username: creator.username,
         profileImage: creator.profileImage,
       },
@@ -68,12 +75,57 @@ const generateRecipes = (numRecipes = 50, users = [], comments = []) => {
     };
 
     // Add recipe ID to the creator's createdRecipes array
-    const originalUser = users.find(user => user.id === creatorId);
-    if (originalUser) {
-      originalUser.createdRecipes.push(recipe.id);
-    }
+    creator.createdRecipes.push(recipe.id);
 
     return recipe;
+  });
+};
+
+// Function to filter recipes based on criteria
+const filterRecipes = (recipes, filters) => {
+  return recipes.filter(recipe => {
+    const matchesSearchTerm =
+      recipe.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+      recipe.description.toLowerCase().includes(filters.searchTerm.toLowerCase());
+
+    const matchesPopularity =
+      filters.popularity === "all" ||
+      (filters.popularity === "latest" && new Date(recipe.createdAt) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) || // Within last week
+      (filters.popularity === "popular" && recipe.likes > 100); // Example for popular
+
+    const matchesCookingTime =
+      filters.cookingTime === "all" ||
+      (filters.cookingTime === "less_30" && recipe.cookingTime === "Less than 30 min") ||
+      (filters.cookingTime === "30_60" && recipe.cookingTime === "30-60 min") ||
+      (filters.cookingTime === "more_60" && recipe.cookingTime === "More than 60 min");
+
+    const matchesDifficulty =
+      filters.difficulty === "all" || recipe.difficulty === filters.difficulty;
+
+    const matchesCategory =
+      filters.categories === "all" || recipe.category === filters.categories;
+
+    const matchesTags =
+      filters.tags.length === 0 || filters.tags.some(tag => recipe.tags.includes(tag));
+
+    // Check for ingredients match if ingredients filtering is used
+    const matchesIngredients =
+      filters.ingredients.length === 0 || filters.ingredients.every(ingredient => recipe.ingredients.includes(ingredient));
+
+    // Check for creators match if creators filtering is used
+    const matchesCreators =
+      filters.creators.length === 0 || filters.creators.includes(recipe.createdBy);
+
+    return (
+      matchesSearchTerm &&
+      matchesPopularity &&
+      matchesCookingTime &&
+      matchesDifficulty &&
+      matchesCategory &&
+      matchesTags &&
+      matchesIngredients &&
+      matchesCreators
+    );
   });
 };
 
@@ -81,6 +133,20 @@ const generateRecipes = (numRecipes = 50, users = [], comments = []) => {
 const users = generateUsers();
 const comments = generateComments(100, users);
 const recipes = generateRecipes(50, users, comments);
+
+// Count recipes by category to find trending categories
+const categoryCounts = recipes.reduce((acc, recipe) => {
+  acc[recipe.category] = (acc[recipe.category] || 0) + 1;
+  return acc;
+}, {});
+
+const trendingCategories = Object.entries(categoryCounts)
+  .sort((a, b) => b[1] - a[1]) // Sort categories by the number of recipes in descending order
+  .slice(0, 3)                  // Take top 3 categories as trending
+  .map(([category]) => {
+    const categoryDetails = categories.find(cat => cat.name === category);
+    return categoryDetails || { name: category, image: '' }; // Return name and image
+  });
 
 // Assign saved recipes to users
 recipes.forEach(recipe => {
@@ -111,7 +177,9 @@ const fakeData = {
   users,
   recipes,
   comments,
-  loggedInUserId
+  trendingCategories,
+  loggedInUserId,
+  filterRecipes, // Added filterRecipes function to the exports
 };
 
 export default fakeData;

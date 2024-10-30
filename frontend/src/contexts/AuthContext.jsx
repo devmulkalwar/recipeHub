@@ -2,10 +2,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import fakeData from '../data/generateFakeData';
 
-export const AuthContext = createContext();
+ const AuthContext = createContext();
 
 // AuthProvider component
-export const AuthProvider = ({ children }) => {
+const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -21,3 +21,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+export { AuthProvider,AuthContext}

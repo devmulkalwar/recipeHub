@@ -47,24 +47,28 @@ const RecipeCard = ({ recipe }) => {
 
       {/* Recipe Details */}
       <div className="p-4 flex flex-col flex-grow">
-        <div className="flex justify-between items-center gap-2">
+        <div className="flex justify-between items-center gap-2 h-12">
           <Typography
             variant="h5"
-            className="text-gray-800 font-bold mb-2 line-clamp-2" // Add line-clamp class
-            style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden', WebkitLineClamp: 2 }}
+            className="text-gray-800 font-bold mb-2 line-clamp-2"
+            style={{
+              display: '-webkit-box',
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              WebkitLineClamp: 2,
+              maxHeight: '3rem', // Ensures consistent height
+            }}
           >
             {title}
           </Typography>
         </div>
-
-       
       </div>
 
       {/* Action Buttons and View Details Button */}
       <div className="px-4 pb-4 flex gap-2 flex-col mt-auto">
 
-         {/* Cooking Time and Difficulty Badge */}
-         <div className="flex justify-between items-center text-gray-600 mt-2">
+        {/* Cooking Time and Difficulty Badge */}
+        <div className="flex justify-between items-center text-gray-600 mt-2">
           <div className="flex justify-center items-center">
             <AiFillClockCircle className="mr-1" />
             <span>{cookingTime}</span>
@@ -80,8 +84,8 @@ const RecipeCard = ({ recipe }) => {
 
         {/* Tags */}
         {tags.length > 0 && (
-          <div className="flex flex-wrap mt-2">
-            {tags.map((tag, index) => (
+          <div className="flex flex-wrap items-center mt-2 max-h-10 overflow-hidden">
+            {tags.slice(0, 3).map((tag, index) => (
               <span
                 key={index}
                 className="m-1.5 bg-orange-200 text-orange-800 text-xs font-semibold px-2.5 py-0.5 rounded"
@@ -89,11 +93,14 @@ const RecipeCard = ({ recipe }) => {
                 {tag}
               </span>
             ))}
+            {tags.length > 3 && (
+              <span className=" text-gray-600 text-xs font-semibold p-1">+{tags.length - 3}</span>
+            )}
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mt-auto">
           <div className="flex items-center">
             <Button
               variant="outlined"

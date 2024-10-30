@@ -40,76 +40,78 @@ const Profile = () => {
     },
   ];
   console.log("Logged In User:", loggedInUser);
-console.log("Saved Recipes IDs:", loggedInUser.savedRecipes);
-console.log("All Recipes:", fakeData.recipes);
+  console.log("Saved Recipes IDs:", loggedInUser.savedRecipes);
+  console.log("All Recipes:", fakeData.recipes);
 
   const [activeTab, setActiveTab] = React.useState("created");
 
   return (
-    <div className="max-w-screen-lg mx-auto p-4">
-      {/* Profile Details */}
-      <div className="grid grid-cols-1 md:grid-cols-3 bg-white shadow-md rounded-lg p-6 max-w-screen-lg mx-auto">
-        {/* User Profile Picture */}
-        <div className="flex-shrink-0 flex items-center justify-center mb-4 md:mb-0">
-          <Avatar
-            src={loggedInUser.profileImage}
-            alt="Profile Picture"
-            size="xl"
-          />
-        </div>
+    <div className="max-w-screen-lg mx-auto p-2 md:p-4">
+      <div className="bg-white shadow-md rounded-lg p-2 max-w-screen-lg mx-auto">
+        <div className="flex flex-col md:grid md:grid-cols-3 gap-6 items-center">
+          {/* User Profile Picture */}
+          <div className=" flex items-center justify-center mb-4 md:mb-0">
+            <Avatar
+              src={loggedInUser.profileImage}
+              alt="Profile Picture"
+              size="xl"
+              className="w-24 h-24 md:w-40 md:h-40"
+            />
+          </div>
 
-        {/* User Info Section */}
-        <div className="flex flex-col justify-center md:col-span-2 pl-4 pt-4">
-          <Typography
-            variant="h1"
-            className="text-2xl font-semibold text-gray-800"
-          >
-            {loggedInUser.name}
-          </Typography>
-          <Typography
-            variant="h1"
-            className="text-lg font-semibold text-gray-600"
-          >
-            @{loggedInUser.username}
-          </Typography>
-          <Typography variant="paragraph" className="mt-2 text-gray-600">
-            {loggedInUser.bio || "This user hasn't written a bio yet."}
-          </Typography>
+          {/* User Info Section */}
+          <div className="flex flex-col items-center md:items-start md:col-span-2 text-center md:text-left">
+            <Typography
+              variant="h1"
+              className="text-2xl md:text-3xl font-semibold text-gray-800"
+            >
+              {loggedInUser.name}
+            </Typography>
+            <Typography
+              variant="h1"
+              className="text-lg md:text-xl font-semibold text-gray-600"
+            >
+              @{loggedInUser.username}
+            </Typography>
+            <Typography variant="paragraph" className="mt-2 text-gray-600">
+              {loggedInUser.bio || "This user hasn't written a bio yet."}
+            </Typography>
 
-          {/* Stats Section */}
-          <div className="flex justify-around mt-4">
-            <div className="flex flex-col items-center">
-              <Typography
-                variant="h1"
-                className="text-xl font-semibold text-gray-800"
-              >
-                {createdRecipes.length}
-              </Typography>
-              <Typography variant="paragraph" className="text-gray-500">
-                Posts
-              </Typography>
-            </div>
-            <div className="flex flex-col items-center">
-              <Typography
-                variant="h1"
-                className="text-xl font-semibold text-gray-800"
-              >
-                {loggedInUser.followers.length}
-              </Typography>
-              <Typography variant="paragraph" className="text-gray-500">
-                Followers
-              </Typography>
-            </div>
-            <div className="flex flex-col items-center">
-              <Typography
-                variant="h1"
-                className="text-xl font-semibold text-gray-800"
-              >
-                {loggedInUser.following.length}
-              </Typography>
-              <Typography variant="paragraph" className="text-gray-500">
-                Following
-              </Typography>
+            {/* Stats Section */}
+            <div className="flex justify-around mt-6 w-full md:w-auto">
+              <div className="flex flex-col items-center mx-4">
+                <Typography
+                  variant="h1"
+                  className="text-xl md:text-2xl font-semibold text-gray-800"
+                >
+                  {createdRecipes.length}
+                </Typography>
+                <Typography variant="paragraph" className="text-gray-500">
+                  Posts
+                </Typography>
+              </div>
+              <div className="flex flex-col items-center mx-4">
+                <Typography
+                  variant="h1"
+                  className="text-xl md:text-2xl font-semibold text-gray-800"
+                >
+                  {loggedInUser.followers.length}
+                </Typography>
+                <Typography variant="paragraph" className="text-gray-500">
+                  Followers
+                </Typography>
+              </div>
+              <div className="flex flex-col items-center mx-4">
+                <Typography
+                  variant="h1"
+                  className="text-xl md:text-2xl font-semibold text-gray-800"
+                >
+                  {loggedInUser.following.length}
+                </Typography>
+                <Typography variant="paragraph" className="text-gray-500">
+                  Following
+                </Typography>
+              </div>
             </div>
           </div>
         </div>
@@ -119,7 +121,7 @@ console.log("All Recipes:", fakeData.recipes);
       <div className="mt-6">
         <Tabs value={activeTab}>
           <TabsHeader
-            className="rounded-none border-b border-blue-gray-50 bg-transparent p-0"
+            className="rounded-none border-b border-blue-gray-50 bg-transparent p-0 my-4"
             indicatorProps={{
               className:
                 "bg-transparent border-b-2 border-gray-900 shadow-none rounded-none",
@@ -141,7 +143,7 @@ console.log("All Recipes:", fakeData.recipes);
               <TabPanel key={value} value={value}>
                 <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {recipes.map((recipe) => (
-                    <RecipeCard key={recipe.id} recipe={recipe}  />
+                    <RecipeCard key={recipe.id} recipe={recipe} />
                   ))}
                 </div>
               </TabPanel>

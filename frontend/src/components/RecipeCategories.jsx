@@ -2,19 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CiCircleChevDown } from 'react-icons/ci';
 import { useNavigate } from 'react-router-dom';
 
-const RecipeCategories = () => {
-  const categories = [
-    { name: 'Appetizers', img: 'https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp' },
-    { name: 'Desserts', img: 'https://img.daisyui.com/images/stock/photo-1565098772267-60af42b81ef2.webp' },
-    { name: 'Beverages', img: 'https://img.daisyui.com/images/stock/photo-1572635148818-ef6fd45eb394.webp' },
-    { name: 'Salads', img: 'https://img.daisyui.com/images/stock/photo-1494253109108-2e30c049369b.webp' },
-    { name: 'Soups', img: 'https://img.daisyui.com/images/stock/photo-1550258987-190a2d41a8ba.webp' },
-    { name: 'Main Courses', img: 'https://img.daisyui.com/images/stock/photo-1559181567-c3190ca9959b.webp' },
-    { name: 'Snacks', img: 'https://img.daisyui.com/images/stock/photo-1601004890684-d8cbf643f5f2.webp' },
-    { name: 'Healthy', img: 'https://img.daisyui.com/images/stock/photo-1572635148818-ef6fd45eb394.webp' },
-    { name: 'Quick Bites', img: 'https://img.daisyui.com/images/stock/photo-1494253109108-2e30c049369b.webp' },
-    { name: 'Kids Friendly', img: 'https://img.daisyui.com/images/stock/photo-1550258987-190a2d41a8ba.webp' },
-  ];
+const RecipeCategories = ({categories}) => {
 
   const navigate = useNavigate();
 
@@ -37,11 +25,11 @@ const iconSize = windowWidth < 768 ? 'text-3xl' : 'text-5xl';
     return categories.slice(0, displayLimit).map((category, index) => (
       <div key={index} className="flex flex-col items-center text-center">
         <img
-          src={category.img}
+          src={category.image}
           alt={category.name}
           className="rounded-full h-16 w-16 md:h-20 md:w-20 object-cover shadow-md"
         />
-        <span className="mt-2 text-xs md:text-sm font-medium">{category.name}</span>
+        <span className="mt-2 font-semibold text-gray-800">{category.name}</span>
       </div>
     ));
   };
