@@ -14,4 +14,5 @@ import ResetPassword from "./ResetPassword.jsx";
 import ForgotPassword from "./ForgotPassword.jsx";
 import Chat from './Chat.jsx';
 import GetStarted from './GetStarted.jsx';
-export { Home, About, Contact, Signup, Login, Profile, Error,Recipes, RecipeDetails, CreateRecipe, EditRecipe, OTPPage, ResetPassword, ForgotPassword ,Chat ,GetStarted}
+import EditProfile from './EditProfile.jsx';
+export { Home, About, Contact, Signup, Login, Profile, Error,Recipes, RecipeDetails, CreateRecipe, EditRecipe, OTPPage, ResetPassword, ForgotPassword ,Chat ,GetStarted , EditProfile}

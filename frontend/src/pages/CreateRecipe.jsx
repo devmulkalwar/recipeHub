@@ -13,7 +13,7 @@ const CreateRecipe = () => {
     image: null,
   });
   const [imagePreview, setImagePreview] = useState(null);
-  const [currentTag, setCurrentTag] = useState(""); // Separate state for current tag input
+  const [currentTag, setCurrentTag] = useState("");
 
   const categories = [
     "Appetizer",
@@ -63,7 +63,7 @@ const CreateRecipe = () => {
         ...prevData,
         tags: [...prevData.tags, currentTag.trim()],
       }));
-      setCurrentTag(""); // Clear the input after adding
+      setCurrentTag("");
     }
   };
 
@@ -78,12 +78,26 @@ const CreateRecipe = () => {
   };
 
   return (
-    <div className="flex-grow min-h-screen bg-gray-50 flex items-center justify-center py-4">
-      <div className="w-full max-w-lg bg-white shadow-lg rounded-lg p-6">
-        <h2 className="text-center text-orange-600 font-bold text-2xl mb-4">
+    <div className="flex-grow min-h-screen bg-gray-50 flex items-center justify-center py-4 px-2 sm:px-4">
+      <div className="flex flex-col w-full max-w-md bg-white shadow-lg rounded-lg p-3 sm:p-4 md:p-6">
+        <h2 className="text-center text-orange-600 font-bold text-xl sm:text-2xl mb-4">
           Create a New Recipe
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {imagePreview && (
+            <img
+              src={imagePreview}
+              alt="Image Preview"
+              className="mb-4 w-full h-32 sm:h-40 object-cover rounded"
+            />
+          )}
+          <input
+            type="file"
+            onChange={handleImageChange}
+            className="mb-2"
+            accept="image/*"
+          />
+
           <input
             type="text"
             name="title"
@@ -91,7 +105,7 @@ const CreateRecipe = () => {
             onChange={handleInputChange}
             placeholder="Title"
             required
-            className="w-full p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500"
+            className="w-full p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 text-sm sm:text-base"
           />
 
           <textarea
@@ -100,7 +114,7 @@ const CreateRecipe = () => {
             onChange={handleInputChange}
             placeholder="Description"
             required
-            className="w-full p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500"
+            className="w-full p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 text-sm sm:text-base"
           />
 
           <select
@@ -108,7 +122,7 @@ const CreateRecipe = () => {
             value={recipeData.category}
             onChange={handleInputChange}
             required
-            className="w-full p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500"
+            className="w-full p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 text-sm sm:text-base"
           >
             <option value="">Select Category</option>
             {categories.map((category, index) => (
@@ -125,7 +139,7 @@ const CreateRecipe = () => {
             onChange={handleInputChange}
             placeholder="Cooking Time (in mins)"
             required
-            className="w-full p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500"
+            className="w-full p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 text-sm sm:text-base"
           />
 
           <select
@@ -133,7 +147,7 @@ const CreateRecipe = () => {
             value={recipeData.difficulty}
             onChange={handleInputChange}
             required
-            className="w-full p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500"
+            className="w-full p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 text-sm sm:text-base"
           >
             <option value="">Select Difficulty</option>
             {difficulties.map((difficulty, index) => (
@@ -145,7 +159,7 @@ const CreateRecipe = () => {
 
           {/* Ingredients Section */}
           <div>
-            <label className="block font-medium text-gray-700 mb-2">
+            <label className="block font-medium text-gray-700 mb-2 text-sm">
               Ingredients:
             </label>
             {recipeData.ingredients.map((ingredient, index) => (
@@ -153,14 +167,14 @@ const CreateRecipe = () => {
                 <input
                   value={ingredient}
                   onChange={(e) => handleArrayChange(e, index, "ingredients")}
-                  className="flex-grow p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500"
+                  className="flex-grow p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 text-sm sm:text-base"
                   placeholder="Ingredient"
                 />
                 {index === recipeData.ingredients.length - 1 ? (
                   <button
                     type="button"
                     onClick={() => addArrayItem("ingredients")}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-3 rounded"
+                    className="bg-orange-500 text-white hover:bg-orange-600 px-3 py-1 rounded text-xs sm:text-sm"
                   >
                     Add
                   </button>
@@ -168,7 +182,7 @@ const CreateRecipe = () => {
                   <button
                     type="button"
                     onClick={() => deleteArrayItem("ingredients", index)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 rounded"
+                    className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs sm:text-sm"
                   >
                     Delete
                   </button>
@@ -179,7 +193,7 @@ const CreateRecipe = () => {
 
           {/* Instructions Section */}
           <div>
-            <label className="block font-medium text-gray-700 mb-2">
+            <label className="block font-medium text-gray-700 mb-2 text-sm">
               Instructions:
             </label>
             {recipeData.instructions.map((instruction, index) => (
@@ -187,14 +201,14 @@ const CreateRecipe = () => {
                 <input
                   value={instruction}
                   onChange={(e) => handleArrayChange(e, index, "instructions")}
-                  className="flex-grow p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500"
+                  className="flex-grow p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 text-sm sm:text-base"
                   placeholder="Instruction"
                 />
                 {index === recipeData.instructions.length - 1 ? (
                   <button
                     type="button"
                     onClick={() => addArrayItem("instructions")}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-3 rounded"
+                    className="bg-orange-500 text-white hover:bg-orange-600 px-3 py-1 rounded text-xs sm:text-sm"
                   >
                     Add
                   </button>
@@ -202,7 +216,7 @@ const CreateRecipe = () => {
                   <button
                     type="button"
                     onClick={() => deleteArrayItem("instructions", index)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 rounded"
+                    className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs sm:text-sm"
                   >
                     Delete
                   </button>
@@ -213,64 +227,51 @@ const CreateRecipe = () => {
 
           {/* Tags Section */}
           <div>
-            <label className="block font-medium text-gray-700 mb-2">
+            <label className="block font-medium text-gray-700 mb-2 text-sm">
               Tags:
             </label>
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-2">
               {recipeData.tags.map((tag, index) => (
                 <div
                   key={index}
-                  className="flex items-center bg-orange-100 text-orange-600 px-3 py-1 rounded-full"
+                  className="flex items-center bg-orange-500 text-white px-2 py-1 rounded text-xs sm:text-sm"
                 >
                   <span>{tag}</span>
                   <button
                     type="button"
                     onClick={() => handleTagDelete(index)}
-                    className="ml-2 text-xs text-red-500 hover:text-red-600"
+                    className="ml-1 text-xs text-red-500 hover:text-red-600"
                   >
-                    &times; {/* X icon */}
+                    &times;
                   </button>
                 </div>
               ))}
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={currentTag}
-                onChange={(e) => setCurrentTag(e.target.value)} // Update current tag input
+                onChange={(e) => setCurrentTag(e.target.value)}
                 placeholder="Add a tag"
-                className="flex-grow p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500"
-                disabled={recipeData.tags.length >= 5} // Disable input if limit reached
+                className="flex-grow p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 text-sm sm:text-base"
+                disabled={recipeData.tags.length >= 5}
               />
               <button
                 type="button"
-                onClick={handleTagAdd} // Call handleTagAdd on button click
-                className="ml-2 bg-orange-500 text-white hover:bg-orange-600 px-4 py-2 rounded"
-                disabled={recipeData.tags.length >= 5} // Disable button if limit reached
+                onClick={handleTagAdd}
+                className="bg-orange-500 text-white hover:bg-orange-600 px-3 py-1 rounded text-xs sm:text-sm"
+                disabled={recipeData.tags.length >= 5}
               >
-                Add
+                Add Tag
               </button>
             </div>
-            {recipeData.tags.length === 5 && (
-              <p className="text-red-500 text-sm mt-1">Maximum 5 tags allowed.</p>
-            )}
           </div>
-
-          <input
-            type="file"
-            onChange={handleImageChange}
-            className="mb-4"
-            accept="image/*"
-          />
-          {imagePreview && (
-            <img src={imagePreview} alt="Image Preview" className="mb-4 w-full h-40 object-cover" />
-          )}
 
           <button
             type="submit"
-            className="w-full bg-orange-600 text-white hover:bg-orange-700 px-4 py-2 rounded"
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded transition duration-200"
           >
-            Create Recipe
+            Submit Recipe
           </button>
         </form>
       </div>

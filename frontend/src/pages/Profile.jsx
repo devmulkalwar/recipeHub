@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Typography } from "@material-tailwind/react";
 import {
   Avatar,
@@ -11,19 +11,24 @@ import {
 import { FaBookmark, FaPizzaSlice } from "react-icons/fa";
 import { RecipeCard } from "../components/components.js";
 import fakeData from "../data/generateFakeData.js";
+import useAuth from "../contexts/useAuthContext.js";
+import { Link } from "react-router-dom"; // Import Link
 
 const Profile = () => {
-  // Retrieve the logged-in user's data
-  const loggedInUser = fakeData.users.find(
-    (user) => user.id === fakeData.loggedInUserId
-  );
+  const { user } = useAuth(); // Ensure useAuth() is called before any conditional logic
+  const [activeTab, setActiveTab] = useState("created");
+
+  // Check if user is not null
+  if (!user) {
+    return <div>Loading...</div>; // Or a suitable loading state
+  }
 
   // Filter created and saved recipes
   const createdRecipes = fakeData.recipes.filter(
-    (recipe) => recipe.createdBy === loggedInUser.id
+    (recipe) => recipe.createdBy === user.id
   );
   const savedRecipes = fakeData.recipes.filter((recipe) =>
-    loggedInUser.savedRecipes.includes(recipe.id)
+    user.savedRecipes.includes(recipe.id)
   );
 
   // Tab data for created and saved recipes
@@ -39,20 +44,15 @@ const Profile = () => {
       recipes: savedRecipes,
     },
   ];
-  console.log("Logged In User:", loggedInUser);
-  console.log("Saved Recipes IDs:", loggedInUser.savedRecipes);
-  console.log("All Recipes:", fakeData.recipes);
-
-  const [activeTab, setActiveTab] = React.useState("created");
 
   return (
     <div className="max-w-screen-lg mx-auto p-2 md:p-4">
       <div className="bg-white shadow-md rounded-lg p-2 max-w-screen-lg mx-auto">
         <div className="flex flex-col md:grid md:grid-cols-3 gap-6 items-center">
           {/* User Profile Picture */}
-          <div className=" flex items-center justify-center mb-4 md:mb-0">
+          <div className="flex items-center justify-center mb-4 md:mb-0">
             <Avatar
-              src={loggedInUser.profileImage}
+              src={user.profileImage}
               alt="Profile Picture"
               size="xl"
               className="w-24 h-24 md:w-40 md:h-40"
@@ -65,16 +65,19 @@ const Profile = () => {
               variant="h1"
               className="text-2xl md:text-3xl font-semibold text-gray-800"
             >
-              {loggedInUser.name}
+              {user.name}
             </Typography>
+
+            <Link to={`/edit-profile/${user.id}`}>Update Profile</Link>
+
             <Typography
               variant="h1"
               className="text-lg md:text-xl font-semibold text-gray-600"
             >
-              @{loggedInUser.username}
+              @{user.username}
             </Typography>
             <Typography variant="paragraph" className="mt-2 text-gray-600">
-              {loggedInUser.bio || "This user hasn't written a bio yet."}
+              {user.bio || "This user hasn't written a bio yet."}
             </Typography>
 
             {/* Stats Section */}
@@ -95,7 +98,7 @@ const Profile = () => {
                   variant="h1"
                   className="text-xl md:text-2xl font-semibold text-gray-800"
                 >
-                  {loggedInUser.followers.length}
+                  {user.followers.length}
                 </Typography>
                 <Typography variant="paragraph" className="text-gray-500">
                   Followers
@@ -106,7 +109,7 @@ const Profile = () => {
                   variant="h1"
                   className="text-xl md:text-2xl font-semibold text-gray-800"
                 >
-                  {loggedInUser.following.length}
+                  {user.following.length}
                 </Typography>
                 <Typography variant="paragraph" className="text-gray-500">
                   Following

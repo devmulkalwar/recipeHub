@@ -17,7 +17,7 @@ const Recipes = () => {
   
   const [showFilters, setShowFilters] = useState(false); // State to toggle filters
   const [currentPage, setCurrentPage] = useState(1); // State for current page
-  const recipesPerPage = 8; // Number of recipes per page
+  const recipesPerPage = 9; // Number of recipes per page
 
   const { recipes } = fakeData;
 

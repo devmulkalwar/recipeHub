@@ -5,8 +5,25 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@material-tailwind/react";
 
 // pages import
-import { About, Chat, Contact, CreateRecipe, EditRecipe, Error, ForgotPassword, GetStarted, Home, Login, OTPPage, Profile, RecipeDetails, Recipes, ResetPassword, Signup } from "./pages/pages.js";
-
+import {
+  About,
+  Chat,
+  Contact,
+  CreateRecipe,
+  EditProfile,
+  EditRecipe,
+  Error,
+  ForgotPassword,
+  GetStarted,
+  Home,
+  Login,
+  OTPPage,
+  Profile,
+  RecipeDetails,
+  Recipes,
+  ResetPassword,
+  Signup, 
+} from "./pages/pages.js";
 
 const router = createBrowserRouter([
   {
@@ -19,7 +36,7 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path:"get-started",
+        path: "get-started",
         element: <GetStarted />,
       },
       {
@@ -39,19 +56,23 @@ const router = createBrowserRouter([
         element: <Contact />,
       },
       {
-        path: "profile",
+        path: "profile/:id",
         element: <Profile />,
       },
       {
-        path: "recipes", 
+        path: "edit-profile/:id",
+        element: <EditProfile />,
+      },      
+      {
+        path: "recipes",
         element: <Recipes />,
       },
       {
-        path: "chat", 
+        path: "chat",
         element: <Chat />,
       },
       {
-        path: "recipe-details/:id", 
+        path: "recipe-details/:id",
         element: <RecipeDetails />,
       },
       {
@@ -59,7 +80,7 @@ const router = createBrowserRouter([
         element: <CreateRecipe />,
       },
       {
-        path: "edit-recipe/:id", 
+        path: "edit-recipe/:id",
         element: <EditRecipe />,
       },
       {
@@ -79,9 +100,7 @@ const router = createBrowserRouter([
 ]);
 
 createRoot(document.getElementById("root")).render(
-
-    <ThemeProvider>
-      <RouterProvider router={router} />
-    </ThemeProvider>
- 
+  <ThemeProvider>
+    <RouterProvider router={router} />
+  </ThemeProvider>
 );

@@ -29,14 +29,22 @@ const generateUsers = (numUsers = 20) => {
 };
 
 // Generate fake comments
+// Generate fake comments with user details
 const generateComments = (numComments = 100, users = []) => {
-  return Array.from({ length: numComments }, () => ({
-    id: faker.string.uuid(),
-    user: faker.helpers.arrayElement(users).id,
-    text: faker.lorem.sentence(),
-    createdAt: faker.date.recent(),
-    updatedAt: faker.date.recent(),
-  }));
+  return Array.from({ length: numComments }, () => {
+    const user = faker.helpers.arrayElement(users); // Get a random user for the comment
+    return {
+      id: faker.string.uuid(),
+      userId: user.id, // Store user ID for linking
+      text: faker.lorem.sentence(),
+      createdAt: faker.date.recent(),
+      updatedAt: faker.date.recent(),
+      userDetails: { // Include user details for rendering
+        username: user.username,
+        profileImage: user.profileImage,
+      }
+    };
+  });
 };
 
 // Generate fake recipes
@@ -132,7 +140,7 @@ const filterRecipes = (recipes, filters) => {
 // Generate data
 const users = generateUsers();
 const comments = generateComments(100, users);
-const recipes = generateRecipes(50, users, comments);
+const recipes = generateRecipes(100, users, comments);
 
 // Count recipes by category to find trending categories
 const categoryCounts = recipes.reduce((acc, recipe) => {
