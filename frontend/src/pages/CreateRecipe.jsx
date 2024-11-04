@@ -78,8 +78,8 @@ const CreateRecipe = () => {
   };
 
   return (
-    <div className="flex-grow min-h-screen bg-gray-50 flex items-center justify-center py-4 px-2 sm:px-4">
-      <div className="flex flex-col w-full max-w-md bg-white shadow-lg rounded-lg p-3 sm:p-4 md:p-6">
+    
+      <div className="flex-grow m-auto p-4 in-h-screen flex items-center justify-center flex-col w-full max-w-md bg-white shadow-lg rounded-lg p-2">
         <h2 className="text-center text-orange-600 font-bold text-xl sm:text-2xl mb-4">
           Create a New Recipe
         </h2>
@@ -274,8 +274,7 @@ const CreateRecipe = () => {
             Submit Recipe
           </button>
         </form>
-      </div>
-    </div>
+   </div>
   );
 };
 
