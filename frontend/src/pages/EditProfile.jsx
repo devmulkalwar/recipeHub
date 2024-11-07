@@ -33,6 +33,20 @@ const EditProfile = () => {
     });
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({
+          ...formData,
+          profileImage: reader.result // Update the profileImage with the base64 encoded string
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     // Handle form submission logic here (e.g., update the user profile)
@@ -42,12 +56,18 @@ const EditProfile = () => {
   return (
     <div className="max-w-screen-md mx-auto p-4">
       <div className="bg-white shadow-md rounded-lg p-6">
-        <div className="flex items-center justify-center mb-4">
+        <div className="flex flex-col items-center justify-center mb-4">
           <Avatar
             src={formData.profileImage}
             alt="Profile Picture"
             size="xl"
-            className="w-24 h-24"
+            className="w-24 h-24 mb-2"
+          />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="text-sm text-gray-500"
           />
         </div>
         <Typography variant="h1" className="text-2xl font-semibold text-gray-800 text-center mb-4">
@@ -91,11 +111,11 @@ const EditProfile = () => {
               name="bio"
               value={formData.bio}
               onChange={handleChange}
-              className="w-full p-2 border bg-white border-gray-300 rounded focus:outline-none focus:ring focus:orange-blue-500"
+              className="w-full p-2 border bg-white border-gray-300 rounded focus:outline-none focus:ring focus:ring-orange-500"
               rows="4"
             />
           </div>
-          <Button type="submit" color="orange" className="w-full ">
+          <Button type="submit" color="orange" className="w-full">
             Save Changes
           </Button>
         </form>
