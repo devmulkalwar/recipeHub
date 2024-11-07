@@ -1,5 +1,4 @@
-// RecipeCard Component
-import React from "react";
+import React, { useEffect } from "react";
 import { Typography, Button } from "@material-tailwind/react";
 import {
   AiOutlineLike,
@@ -23,6 +22,12 @@ const RecipeCard = ({ recipe }) => {
     comments = [],
     image,
     tags = [],
+    createdAt = "Unknown",
+    createdBy,
+    createdByDetails = {
+      username: "Anonymous",
+      profileImage: "default-profile.jpg",
+    },
   } = recipe;
 
   const getDifficultyColor = (level) => {
@@ -38,8 +43,44 @@ const RecipeCard = ({ recipe }) => {
     }
   };
 
+  useEffect(() => {
+    console.log(recipe);
+  }, []);
+
   return (
     <div className="bg-white shadow-md rounded-lg overflow-hidden transition-transform transform hover:scale-105 w-full max-w-sm mx-auto flex flex-col h-full">
+      {/* Recipe Header - Profile Picture, Username, and Created Date */}
+      <div className="flex justify-between items-center p-4 gap-3">
+        {/* Profile Section */}
+        <div className="flex items-center gap-2">
+          <img
+            src={createdByDetails.profileImage}
+            alt="Profile"
+            className="w-10 h-10 rounded-full object-cover"
+          />
+          <div className="flex flex-col">
+            <Link to={`/profile/${createdBy}`}>
+              <Typography
+                variant="h6"
+                className="text-gray-800 font-semibold hover:underline"
+              >
+                {createdByDetails.username}
+              </Typography>
+            </Link>
+            <Typography variant="small" className="text-gray-500 text-xs">
+              {createdAt
+                ? new Date(createdAt).toLocaleDateString()
+                : "Date not available"}
+            </Typography>
+          </div>
+        </div>
+
+        {/* Follow Button */}
+        <button className="text-blue-500 text-sm font-semibold hover:underline">
+          Follow
+        </button>
+      </div>
+
       {/* Recipe Image */}
       <img
         src={image || "fallback-image-url.jpg"}
@@ -54,11 +95,11 @@ const RecipeCard = ({ recipe }) => {
             variant="h5"
             className="text-gray-800 font-bold mb-2 line-clamp-2"
             style={{
-              display: '-webkit-box',
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
+              display: "-webkit-box",
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
               WebkitLineClamp: 2,
-              maxHeight: '3rem', // Ensures consistent height
+              maxHeight: "3rem", // Ensures consistent height
             }}
           >
             {title}
@@ -68,7 +109,6 @@ const RecipeCard = ({ recipe }) => {
 
       {/* Action Buttons and View Details Button */}
       <div className="px-4 pb-4 flex gap-2 flex-col mt-auto">
-
         {/* Cooking Time and Difficulty Badge */}
         <div className="flex justify-between items-center text-gray-600 mt-2">
           <div className="flex justify-center items-center">
@@ -78,7 +118,9 @@ const RecipeCard = ({ recipe }) => {
 
           {/* Difficulty Badge */}
           <span
-            className={`px-2 py-1 rounded-md text-xs ${getDifficultyColor(difficulty)}`}
+            className={`px-2 py-1 rounded-md text-xs ${getDifficultyColor(
+              difficulty
+            )}`}
           >
             {difficulty}
           </span>
@@ -96,7 +138,9 @@ const RecipeCard = ({ recipe }) => {
               </span>
             ))}
             {tags.length > 3 && (
-              <span className=" text-gray-600 text-xs font-semibold p-1">+{tags.length - 3}</span>
+              <span className="text-gray-600 text-xs font-semibold p-1">
+                +{tags.length - 3}
+              </span>
             )}
           </div>
         )}

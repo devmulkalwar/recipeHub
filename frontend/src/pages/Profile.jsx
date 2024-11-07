@@ -12,18 +12,44 @@ import { FaBookmark, FaPizzaSlice } from "react-icons/fa";
 import { RecipeCard } from "../components/components.js";
 import fakeData from "../data/generateFakeData.js";
 import useAuth from "../contexts/useAuthContext.js";
-import { Link } from "react-router-dom"; // Import Link
+import { Link, useParams } from "react-router-dom"; // Import Link
 
 const Profile = () => {
-  const { user } = useAuth(); // Ensure useAuth() is called before any conditional logic
+  const { user: loggedInUser } = useAuth(null); // Use useAuth to get the logged-in user
+  const { id } = useParams(); // userId from URL
+  const [user, setUser] = useState(null); // State for the current user
   const [activeTab, setActiveTab] = useState("created");
+  const [isAuthenticated , setIsAuthenticated] = useState(false);
 
-  // Check if user is not null
+  useEffect(() => {
+    console.log("Logged-in User:", loggedInUser);
+    console.log("User ID from URL:", id);
+
+    // Check if fakeData.users exists and is an array
+    console.log("Fake Data Users:", fakeData.users);
+
+    // Find the user from fake data based on userId
+    const foundUser = fakeData.users.find((u) => u.id === id); 
+    console.log("Found User from Fake Data:", foundUser);
+
+    if (loggedInUser) {
+      if (loggedInUser.id === id) {
+        setUser(loggedInUser); // Set logged-in user if profile matches
+        setIsAuthenticated(true);
+      } else if (foundUser) {
+        setUser(foundUser); // Otherwise, set user from the fake data
+        setIsAuthenticated(false)
+      }
+    } else if (foundUser) {
+      setUser(foundUser); // Fallback to the fake user if loggedInUser is not available
+    }
+  }, [loggedInUser, id]); // Dependency array to ensure it updates when loggedInUser or userId changes
+
+  // If user data isn't ready yet, show loading state
   if (!user) {
-    return <div>Loading...</div>; // Or a suitable loading state
+    return <div>Loading...</div>;
   }
 
-  // Filter created and saved recipes
   const createdRecipes = fakeData.recipes.filter(
     (recipe) => recipe.createdBy === user.id
   );
@@ -31,19 +57,23 @@ const Profile = () => {
     user.savedRecipes.includes(recipe.id)
   );
 
-  // Tab data for created and saved recipes
   const profileTabsData = [
     {
       label: <FaPizzaSlice className="text-xl" />,
       value: "created",
       recipes: createdRecipes,
     },
-    {
-      label: <FaBookmark className="text-xl" />,
-      value: "saved",
-      recipes: savedRecipes,
-    },
+    ...(isAuthenticated
+      ? [
+          {
+            label: <FaBookmark className="text-xl" />,
+            value: "saved",
+            recipes: savedRecipes,
+          },
+        ]
+      : []),
   ];
+  
 
   return (
     <div className="max-w-screen-lg mx-auto p-2 md:p-4">
@@ -52,7 +82,7 @@ const Profile = () => {
           {/* User Profile Picture */}
           <div className="flex items-center justify-center mb-4 md:mb-0">
             <Avatar
-              src={user.profileImage}
+              src={user.profileImage || "/default-profile.jpg"} // Provide a fallback image
               alt="Profile Picture"
               size="xl"
               className="w-24 h-24 md:w-40 md:h-40"
