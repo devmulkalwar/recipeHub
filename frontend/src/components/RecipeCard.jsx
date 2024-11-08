@@ -1,14 +1,20 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Typography, Button } from "@material-tailwind/react";
 import {
   AiOutlineLike,
+  AiFillLike,
   AiOutlineComment,
   AiFillClockCircle,
 } from "react-icons/ai";
-import { BookmarkIcon } from "@heroicons/react/24/solid";
+import { BookmarkIcon as OutlineBookmarkIcon } from "@heroicons/react/24/outline";
+import { BookmarkIcon as FilledBookmarkIcon } from "@heroicons/react/24/solid";
 import { Link } from "react-router-dom";
 
 const RecipeCard = ({ recipe }) => {
+  const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+
   if (!recipe) {
     return <div>No recipe available</div>;
   }
@@ -76,8 +82,11 @@ const RecipeCard = ({ recipe }) => {
         </div>
 
         {/* Follow Button */}
-        <button className="text-blue-500 text-sm font-semibold hover:underline">
-          Follow
+        <button
+          className="text-blue-500 text-sm font-semibold hover:underline"
+          onClick={() => setIsFollowing(!isFollowing)}
+        >
+          {isFollowing ? "Unfollow" : "Follow"}
         </button>
       </div>
 
@@ -99,7 +108,7 @@ const RecipeCard = ({ recipe }) => {
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
               WebkitLineClamp: 2,
-              maxHeight: "3rem", // Ensures consistent height
+              maxHeight: "3rem",
             }}
           >
             {title}
@@ -145,32 +154,38 @@ const RecipeCard = ({ recipe }) => {
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex justify-between items-center mt-auto">
-          <div className="flex items-center">
-            <Button
-              variant="outlined"
-              className="flex items-center justify-center text-gray-700 border-gray-300 hover:bg-gray-200 mr-2"
-            >
-              <AiOutlineLike className="mr-1" />
-              {likes}
-            </Button>
-
-            <Button
-              variant="outlined"
-              className="flex items-center justify-center text-gray-700 border-gray-300 hover:bg-gray-200 mr-2"
-            >
-              <AiOutlineComment className="mr-1" />
-              {comments.length}
-            </Button>
-          </div>
-
-          {/* Save Recipe Button */}
+        <div className="flex justify-evenly items-center mt-auto space-x-2">
           <Button
             variant="outlined"
-            className="flex items-center justify-center text-gray-700 border-gray-300 hover:bg-gray-200"
+            className="flex items-center justify-center text-gray-700 border-gray-300 hover:bg-gray-200 w-1/3 h-10"
+            onClick={() => setIsLiked(!isLiked)}
           >
-            <BookmarkIcon className="w-5 h-5 mr-1" />
+            {isLiked ? (
+              <AiFillLike className="h-5 w-5 mr-1 text-orange-500" />
+            ) : (
+              <AiOutlineLike className="h-5 w-5 mr-1" />
+            )}
+            {likes + (isLiked ? 1 : 0)}
+          </Button>
+
+          <Button
+            variant="outlined"
+            className="flex items-center justify-center text-gray-700 border-gray-300 hover:bg-gray-200 w-1/3 h-10"
+          >
+            <AiOutlineComment className="h-5 w-5 mr-1" />
+            {comments.length}
+          </Button>
+
+          <Button
+            variant="outlined"
+            className="flex items-center justify-center text-gray-700 border-gray-300 hover:bg-gray-200 w-1/3 h-10"
+            onClick={() => setIsSaved(!isSaved)}
+          >
+            {isSaved ? (
+              <FilledBookmarkIcon className="w-5 h-5 mr-1 text-orange-500" />
+            ) : (
+              <OutlineBookmarkIcon className="w-5 h-5 mr-1" />
+            )}
           </Button>
         </div>
 

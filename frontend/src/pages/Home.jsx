@@ -85,7 +85,7 @@ const Home = () => {
 
         <div className="min-w-[320px] max-w-screen-lg flex justify-center items-center w-full py-6  px-4">
           <div className="w-full  grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {fakeData.recipes.splice(0, 18).map((recipe, index) => (
+            {fakeData.recipes.splice(0, 9).map((recipe, index) => (
               <RecipeCard key={index} recipe={recipe} />
             ))}
           </div>
