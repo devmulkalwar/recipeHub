@@ -3,6 +3,11 @@ import bcrypt from "bcrypt"; // Ensure you import bcrypt for password comparison
 
 const UserSchema = new Schema(
   {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     username: {
       type: String,
       required: true,
@@ -22,7 +27,7 @@ const UserSchema = new Schema(
     },
     profileImage: {
       type: String,
-      default: "default_profile_image_url", // Placeholder URL or default avatar image
+      default: "default_profile_image_url", 
     },
     bio: {
       type: String,
@@ -52,6 +57,12 @@ const UserSchema = new Schema(
         ref: "Recipe",
       },
     ],
+    tags:[
+      {
+        type: String,
+        trim: true,
+      }
+    ],
     createdRecipes: [
       {
         type: Schema.Types.ObjectId,
@@ -75,6 +86,7 @@ const UserSchema = new Schema(
     timestamps: true, 
   }
 );
+
 
 // Export the User model
 const User = mongoose.model("User", UserSchema);

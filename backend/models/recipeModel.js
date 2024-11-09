@@ -1,34 +1,71 @@
 import mongoose from 'mongoose';
-import Comment from './commentModel.js'; // Import the Comment model
 
-// Define the Recipe schema
-const RecipeSchema = new mongoose.Schema({
+const { Schema } = mongoose;
+
+const recipeSchema = new Schema(
+  {
     title: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
-    ingredients: {
-        type: [String],
-        required: true,
+    description: {
+      type: String,
+      required: true,
     },
-    instructions: {
-        type: String,
-        required: true,
+    category: {
+      type: String,
+      required: true,
     },
+    categoryImage: {
+      type: String,
+      required: true,
+    },
+    cookingTime: {
+      type: String,
+      required: true,
+    },
+    difficulty: {
+      type: String,
+      required: true,
+    },
+    ingredients: [{
+      type: String,
+      required: true,
+    }],
+    instructions: [{
+      type: String,
+      required: true,
+    }],
     likes: {
-        type: Number,
-        default: 0, // Default number of likes
+      type: Number,
+      default: 0,
     },
-    comments: [Comment.schema], // Use the Comment schema
-    createdBy: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'User', // Reference to the User model (recipe creator)
-        required: true, 
+    comments: [{
+      type: Schema.Types.ObjectId,
+      ref: 'Comment',
+    }],
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
-    // Additional fields can be added here...
-}, {
-    timestamps: true, // Automatically adds createdAt and updatedAt fields
-});
+    image: {
+      type: String,
+      required: true,
+    },
+    tags: [{
+      type: String,
+      required: true,
+    }],
+  },
+  {
+    timestamps: true,  // Automatically manage createdAt and updatedAt fields
+  }
+);
 
-// Export the Recipe model
-export default mongoose.model('Recipe', RecipeSchema);
+// Create a method to populate `createdByDetails` dynamically
+recipeSchema.methods.populateCreatedByDetails = function () {
+  return this.populate('createdBy', 'username profileImage');
+};
+
+export default mongoose.model('Recipe', recipeSchema);
