@@ -30,7 +30,7 @@ router.get('/:id/saved-recipes', verifyToken, getSavedRecipes);
 router.get('/:id/liked-recipes', verifyToken, getLikedRecipes);
 
 // Update user profile (e.g., bio, profile image, etc.)
-router.put('/:id/update-profile', verifyToken, updateUserProfile);
+router.put('/:id/update-profile',upload.single('profileImage'),verifyToken, updateUserProfile);
 
 router.post('/:id/create-profile',upload.single('profileImage'), verifyToken, createUserProfile);
 

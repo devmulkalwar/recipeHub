@@ -1,6 +1,6 @@
 import User from "../models/userModel.js";
 import Recipe from "../models/recipeModel.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteImageFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
@@ -181,9 +181,11 @@ export const getCreatedRecipes = async (req, res) => {
 
 // Update user profile
 export const updateUserProfile = async (req, res) => {
+  let profileImage; // Declare profileImage outside the try block so it's accessible in the catch block
   try {
-    const userId = req.user.id;
-    const { name, username, email, profileImage, bio } = req.body;
+    const userId = req.params.id;
+    const { name, username, bio } = req.body;
+    profileImage = req.file; // Set profileImage to req.file
 
     const user = await User.findById(userId);
     if (!user) {
@@ -192,39 +194,53 @@ export const updateUserProfile = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
+    let profileImageUrl = user.profileImage;
+
+    // Delete the old profile image from Cloudinary if a new one is uploaded
+    if (profileImage) {
+      const { path } = profileImage;
+
+      // If the user has an old profile image, delete it from Cloudinary
+      if (user.profileImage) {
+        await deleteImageFromCloudinary(user.profileImage);
+      }
+
+      // Upload the new profile image to Cloudinary
+      const cloudinaryResult = await uploadOnCloudinary(path);
+      profileImageUrl = cloudinaryResult.url;
+    }
+
     // Update fields if they are provided
     if (name) user.name = name;
     if (username) user.username = username;
-    if (email) user.email = email;
-    if (profileImage) user.profileImage = profileImage;
     if (bio) user.bio = bio;
+    user.profileImage = profileImageUrl;
 
     // Set profileComplete if all required fields are filled
     user.profileComplete = !!(
       user.name &&
       user.username &&
-      user.email &&
       user.profileImage &&
       user.bio
     );
 
     const updatedUser = await user.save();
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "User profile updated successfully",
-        user: { ...updatedUser._doc, password: undefined },
-      });
+    res.status(200).json({
+      success: true,
+      message: "User profile updated successfully",
+      user: { ...updatedUser._doc, password: undefined },
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error updating user profile",
-        error: error.message,
-      });
+    // If there was an error and a profile image was uploaded, remove the temporary file
+    if (profileImage && profileImage.path) {
+      fs.unlinkSync(profileImage.path);
+    }
+    res.status(500).json({
+      success: false,
+      message: "Error updating user profile",
+      error: error.message,
+    });
   }
 };
 

@@ -13,11 +13,12 @@ import {
   sortRecipes,
   filterRecipes,
 } from '../controllers/recipeController.js';
+import verifyToken from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 // Create a new recipe
-router.post('/create', createRecipe);
+router.post('/create', verifyToken, createRecipe); 
 
 // Get a recipe by its ID
 router.get('/:id', getRecipeById);
@@ -32,16 +33,16 @@ router.get('/user/:userId', getRecipesByUser);
 router.get('/category/:category', getRecipesByCategory);
 
 // Update a recipe by ID
-router.put('/:id', updateRecipe);
+router.put('/:id', verifyToken, updateRecipe);
 
 // Delete a recipe by ID
-router.delete('/:id', deleteRecipe);
+router.delete('/:id', verifyToken, deleteRecipe);
 
 // Like a recipe
-router.put('/:id/like', likeRecipe);
+router.put('/:id/like', verifyToken,likeRecipe);
 
 // Save a recipe
-router.put('/:id/save', saveRecipe);
+router.put('/:id/save', verifyToken, saveRecipe);
 
 // Search recipes by name or ingredients
 router.get('/search', searchRecipes);
