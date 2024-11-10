@@ -35,6 +35,6 @@ router.put('/:id/update-profile',upload.single('profileImage'),verifyToken, upda
 router.post('/:id/create-profile',upload.single('profileImage'), verifyToken, createUserProfile);
 
 // Delete user account
-router.delete('/delete', verifyToken, deleteUser);
+router.delete('/:id/delete-user', verifyToken, deleteUser);
 
 export default router;

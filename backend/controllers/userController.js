@@ -303,13 +303,22 @@ export const createUserProfile = async (req, res) => {
 
 // Delete user account
 export const deleteUser = async (req, res) => {
+  const userId = req.params.id; // Get user ID from the request parameters
   try {
-    const user = await User.findByIdAndDelete(req.user.id);
-
+    // Find the user by ID
+    const user = await User.findById(userId);
     if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
+    }
+
+    // Delete the user from the database
+    await User.findByIdAndDelete(userId);
+
+    // Optionally, you can also delete the user's profile image from Cloudinary if it exists
+    if (user.profileImage) {
+      await deleteImageFromCloudinary(user.profileImage);
     }
 
     res
@@ -325,3 +334,4 @@ export const deleteUser = async (req, res) => {
       });
   }
 };
+
