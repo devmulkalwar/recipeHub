@@ -9,7 +9,9 @@ import {
   getRecipesByCategory,
   likeRecipe,
   saveRecipe,
-  addCommentToRecipe
+  searchRecipes,
+  sortRecipes,
+  filterRecipes,
 } from '../controllers/recipeController.js';
 
 const router = express.Router();
@@ -41,7 +43,11 @@ router.put('/:id/like', likeRecipe);
 // Save a recipe
 router.put('/:id/save', saveRecipe);
 
-// Add a comment to a recipe
-router.post('/:id/comment', addCommentToRecipe);
+// Search recipes by name or ingredients
+router.get('/search', searchRecipes);
+
+router.get('/sort', sortRecipes);
+
+router.get('/filter', filterRecipes);
 
 export default router;

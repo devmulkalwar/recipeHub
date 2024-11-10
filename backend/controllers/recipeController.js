@@ -15,7 +15,7 @@ export const createRecipe = async (req, res) => {
       instructions,
       image,
       tags,
-      createdBy: req.user.id 
+      createdBy: req.user.id
     });
 
     await newRecipe.save();
@@ -29,8 +29,8 @@ export const createRecipe = async (req, res) => {
 export const getRecipeById = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id)
-      .populate('createdBy', 'username profileImage')  // Populate creator details
-      .populate('comments'); // Populate comments if necessary
+      .populate('createdBy', 'username profileImage')
+      .populate('comments');
 
     if (!recipe) {
       return res.status(404).json({ message: 'Recipe not found' });
@@ -165,5 +165,60 @@ export const addCommentToRecipe = async (req, res) => {
     res.status(200).json({ message: 'Comment added successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error adding comment to recipe', error: error.message });
+  }
+};
+
+// Search recipes by name or ingredients
+export const searchRecipes = async (req, res) => {
+  const { query } = req.query; // Search query string from the request
+
+  try {
+    const recipes = await Recipe.find({
+      $or: [
+        { title: { $regex: query, $options: 'i' } },  // Case-insensitive search by title
+        { ingredients: { $regex: query, $options: 'i' } }, // Case-insensitive search by ingredients
+      ]
+    }).populate('createdBy', 'username profileImage');
+
+    res.status(200).json(recipes);
+  } catch (error) {
+    res.status(500).json({ message: 'Error searching recipes', error: error.message });
+  }
+};
+
+// Sort recipes by various fields (e.g., date, popularity, cooking time)
+export const sortRecipes = async (req, res) => {
+  const { field, order } = req.query; // e.g., 'createdAt', 'popularity', etc.
+
+  try {
+    const sortOptions = {};
+    if (field && order) {
+      sortOptions[field] = order === 'desc' ? -1 : 1; // Sorting in descending or ascending order
+    }
+
+    const recipes = await Recipe.find().sort(sortOptions).populate('createdBy', 'username profileImage');
+
+    res.status(200).json(recipes);
+  } catch (error) {
+    res.status(500).json({ message: 'Error sorting recipes', error: error.message });
+  }
+};
+
+// Filter recipes by attributes like difficulty, cooking time, etc.
+export const filterRecipes = async (req, res) => {
+  const { category, difficulty, cookingTime } = req.query;
+
+  const filters = {};
+
+  if (category) filters.category = category;
+  if (difficulty) filters.difficulty = difficulty;
+  if (cookingTime) filters.cookingTime = { $lte: cookingTime }; // Assuming 'cookingTime' is in minutes
+
+  try {
+    const recipes = await Recipe.find(filters).populate('createdBy', 'username profileImage');
+
+    res.status(200).json(recipes);
+  } catch (error) {
+    res.status(500).json({ message: 'Error filtering recipes', error: error.message });
   }
 };

@@ -6,31 +6,35 @@ import {
     getSavedRecipes,
     getLikedRecipes,
     updateUserProfile,
+    createUserProfile,
     deleteUser
 } from '../controllers/userController.js';
-import authMiddleware from '../middlewares/authMiddleware.js'; // Protect routes
+import verifyToken from '../middlewares/authMiddleware.js';
+import {upload} from "../middlewares/multerMiddleware.js";
 
 const router = express.Router();
 
 // Get user profile
-router.get('/:id', authMiddleware, getUserProfile);
+router.get('/:id', verifyToken, getUserProfile);
 
 // Follow a user
-router.post('/follow', authMiddleware, followUser);
+router.post('/follow', verifyToken, followUser);
 
 // Unfollow a user
-router.post('/unfollow', authMiddleware, unfollowUser);
+router.post('/unfollow', verifyToken, unfollowUser);
 
 // Get saved recipes for a user
-router.get('/:id/saved-recipes', authMiddleware, getSavedRecipes);
+router.get('/:id/saved-recipes', verifyToken, getSavedRecipes);
 
 // Get liked recipes for a user
-router.get('/:id/liked-recipes', authMiddleware, getLikedRecipes);
+router.get('/:id/liked-recipes', verifyToken, getLikedRecipes);
 
 // Update user profile (e.g., bio, profile image, etc.)
-router.put('/update', authMiddleware, updateUserProfile);
+router.put('/:id/update-profile', verifyToken, updateUserProfile);
+
+router.post('/:id/create-profile',upload.single('profileImage'), verifyToken, createUserProfile);
 
 // Delete user account
-router.delete('/delete', authMiddleware, deleteUser);
+router.delete('/delete', verifyToken, deleteUser);
 
 export default router;

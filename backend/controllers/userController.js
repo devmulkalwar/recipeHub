@@ -1,202 +1,311 @@
-import User from '../models/userModel.js';
-import Recipe from '../models/recipeModel.js';
+import User from "../models/userModel.js";
+import Recipe from "../models/recipeModel.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import fs from "fs";
+import dotenv from "dotenv";
+dotenv.config();
 
 // Get user profile by ID
 export const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id)
-      .populate({
-        path: 'followers',
-        select: 'username profileImage', // Fetch basic follower details
-      })
-      .populate({
-        path: 'following',
-        select: 'username profileImage', // Fetch basic following details
-      })
-      .populate({
-        path: 'savedRecipes',
-        populate: {
-          path: 'createdBy',
-          select: 'username profileImage', // Fetch recipe creator details
-        },
-      })
-      .populate({
-        path: 'likedRecipes',
-        populate: {
-          path: 'createdBy',
-          select: 'username profileImage', // Fetch recipe creator details
-        },
-      });
-
+    const user = await User.findById(req.params.id).select("-password");
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
-
-    res.status(200).json(user);
+    res.status(200).json({ success: true, user });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching user profile', error: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error fetching user profile",
+        error: error.message,
+      });
   }
 };
 
 // Follow a user
 export const followUser = async (req, res) => {
   try {
-    const { userId } = req.body;
-    const followerId = req.user.id;
-
-    if (followerId === userId) {
-      return res.status(400).json({ message: 'You cannot follow yourself.' });
+    const { userId, targetUserId } = req.body;
+    if (userId === targetUserId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "You cannot follow yourself" });
     }
 
-    const userToFollow = await User.findById(userId);
-    if (!userToFollow) {
-      return res.status(404).json({ message: 'User not found.' });
+    const user = await User.findById(userId);
+    const targetUser = await User.findById(targetUserId);
+
+    if (!user || !targetUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    if (!userToFollow.followers.includes(followerId)) {
-      userToFollow.followers.push(followerId);
-      await userToFollow.save();
+    if (!user.following.includes(targetUserId)) {
+      user.following.push(targetUserId);
+      targetUser.followers.push(userId);
 
-      const follower = await User.findById(followerId);
-      if (!follower.following.includes(userId)) {
-        follower.following.push(userId);
-        await follower.save();
-      }
+      await user.save();
+      await targetUser.save();
+
+      res
+        .status(200)
+        .json({ success: true, message: "User followed successfully" });
+    } else {
+      res
+        .status(400)
+        .json({ success: false, message: "Already following this user" });
     }
-
-    res.status(200).json({ message: 'You are now following this user.' });
   } catch (error) {
-    res.status(500).json({ message: 'Error following user', error: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error following user",
+        error: error.message,
+      });
   }
 };
 
 // Unfollow a user
 export const unfollowUser = async (req, res) => {
   try {
-    const { userId } = req.body;
-    const followerId = req.user.id;
+    const { userId, targetUserId } = req.body;
 
-    const userToUnfollow = await User.findById(userId);
-    if (!userToUnfollow) {
-      return res.status(404).json({ message: 'User not found.' });
+    const user = await User.findById(userId);
+    const targetUser = await User.findById(targetUserId);
+
+    if (!user || !targetUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    userToUnfollow.followers.pull(followerId);
-    await userToUnfollow.save();
+    if (user.following.includes(targetUserId)) {
+      user.following = user.following.filter(
+        (id) => id.toString() !== targetUserId
+      );
+      targetUser.followers = targetUser.followers.filter(
+        (id) => id.toString() !== userId
+      );
 
-    const follower = await User.findById(followerId);
-    follower.following.pull(userId);
-    await follower.save();
+      await user.save();
+      await targetUser.save();
 
-    res.status(200).json({ message: 'You have unfollowed this user.' });
+      res
+        .status(200)
+        .json({ success: true, message: "User unfollowed successfully" });
+    } else {
+      res
+        .status(400)
+        .json({ success: false, message: "You are not following this user" });
+    }
   } catch (error) {
-    res.status(500).json({ message: 'Error unfollowing user', error: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error unfollowing user",
+        error: error.message,
+      });
   }
 };
 
-// Get saved recipes for the user with full details
+// Get saved recipes for a user
 export const getSavedRecipes = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).populate({
-      path: 'savedRecipes',
-      populate: {
-        path: 'createdBy',
-        select: 'username profileImage',
-      },
-    });
-
+    const user = await User.findById(req.params.id).populate("savedRecipes");
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
-
-    res.status(200).json(user.savedRecipes);
+    res.status(200).json({ success: true, savedRecipes: user.savedRecipes });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching saved recipes', error: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error fetching saved recipes",
+        error: error.message,
+      });
   }
 };
 
-// Get liked recipes for the user with full details
+// Get liked recipes for a user
 export const getLikedRecipes = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).populate({
-      path: 'likedRecipes',
-      populate: {
-        path: 'createdBy',
-        select: 'username profileImage',
-      },
-    });
-
+    const user = await User.findById(req.params.id).populate("likedRecipes");
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
-
-    res.status(200).json(user.likedRecipes);
+    res.status(200).json({ success: true, likedRecipes: user.likedRecipes });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching liked recipes', error: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error fetching liked recipes",
+        error: error.message,
+      });
+  }
+};
+
+// Get created recipes for a user
+export const getCreatedRecipes = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const recipes = await Recipe.find({ createdBy: userId });
+    if (!recipes) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No recipes found for this user" });
+    }
+    res.status(200).json({ success: true, recipes });
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error fetching created recipes",
+        error: error.message,
+      });
   }
 };
 
 // Update user profile
 export const updateUserProfile = async (req, res) => {
-    try {
-      const userId = req.params.id;
-      const { name, username, email, profileImage, bio } = req.body;
-  
-      // Find the user by ID
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      // Update the fields only if they are provided in the request body
-      if (name) user.name = name;
-      if (username) user.username = username;
-      if (email) user.email = email;
-      if (profileImage) user.profileImage = profileImage;
-      if (bio) user.bio = bio;
-  
-      // Save the updated user
-      const updatedUser = await user.save();
-  
-      res.status(200).json({
-        message: 'User profile updated successfully',
-        user: updatedUser,
+  try {
+    const userId = req.user.id;
+    const { name, username, email, profileImage, bio } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Update fields if they are provided
+    if (name) user.name = name;
+    if (username) user.username = username;
+    if (email) user.email = email;
+    if (profileImage) user.profileImage = profileImage;
+    if (bio) user.bio = bio;
+
+    // Set profileComplete if all required fields are filled
+    user.profileComplete = !!(
+      user.name &&
+      user.username &&
+      user.email &&
+      user.profileImage &&
+      user.bio
+    );
+
+    const updatedUser = await user.save();
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "User profile updated successfully",
+        user: { ...updatedUser._doc, password: undefined },
       });
-    } catch (error) {
-      res.status(500).json({ message: 'Error updating user profile', error: error.message });
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error updating user profile",
+        error: error.message,
+      });
+  }
+};
+
+// Create user profile
+export const createUserProfile = async (req, res) => {
+  const userId = req.params.id;
+  const { name, username, bio } = req.body;
+  const profileImage = req.file;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
-  };
-  
-  // Delete a user by ID
+
+    if (user.name && user.username) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Profile already completed" });
+    }
+
+    let profileImageUrl = user.profileImage;
+
+    // Upload the new profile image to Cloudinary if provided
+    if (profileImage) {
+      const { path } = profileImage;
+      const cloudinaryResult = await uploadOnCloudinary(path);
+      profileImageUrl = cloudinaryResult.url;
+
+    }
+
+    // Update user profile with new data
+    user.name = name || user.name;
+    user.username = username || user.username;
+    user.profileImage = profileImageUrl;
+    user.bio = bio || user.bio;
+    user.isProfileComplete = true;
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile completed successfully",
+      user: { ...updatedUser._doc, password: undefined },
+    });
+  } catch (error) {
+    // Clean up temporary image file if there was an error during the process
+    if (profileImage && profileImage.path) {
+      fs.unlinkSync(profileImage.path);
+    }
+    res.status(500).json({
+      success: false,
+      message: "Error completing profile",
+      error: error.message,
+    });
+  }
+};
+
+// Delete user account
 export const deleteUser = async (req, res) => {
-    try {
-      const userId = req.params.id;
-  
-      // Find the user to delete
-      const userToDelete = await User.findById(userId);
-      if (!userToDelete) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      // Remove the user from other users' followers and following lists
-      await User.updateMany(
-        { following: userId },
-        { $pull: { following: userId } }
-      );
-      await User.updateMany(
-        { followers: userId },
-        { $pull: { followers: userId } }
-      );
-  
-      // Delete the user’s recipes if necessary (optional step)
-      await Recipe.deleteMany({ createdBy: userId });
-  
-      // Finally, delete the user
-      await User.findByIdAndDelete(userId);
-  
-      res.status(200).json({ message: 'User deleted successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Error deleting user', error: error.message });
+  try {
+    const user = await User.findByIdAndDelete(req.user.id);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
-  };
-  
+
+    res
+      .status(200)
+      .json({ success: true, message: "User account deleted successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error deleting user account",
+        error: error.message,
+      });
+  }
+};

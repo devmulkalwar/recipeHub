@@ -59,7 +59,7 @@ const recipeSchema = new Schema(
     }],
   },
   {
-    timestamps: true,  // Automatically manage createdAt and updatedAt fields
+    timestamps: true,  
   }
 );
 

@@ -14,11 +14,11 @@ import dotenv from "dotenv";
 
 // Register new user
 export const signup = async (req, res) => {
-  const { username, email, password, confirmPassword } = req.body;
+  const {email, password, confirmPassword } = req.body;
 
   try {
     // Validate required fields
-    if (!email || !password || !confirmPassword || !username) {
+    if (!email || !password || !confirmPassword ) {
       return res
         .status(400)
         .json({ success: false, message: "All fields are required" });
@@ -49,7 +49,6 @@ export const signup = async (req, res) => {
 
     // Create new user
     const user = new User({
-      username,
       email,
       password: hashedPassword,
       verificationToken,

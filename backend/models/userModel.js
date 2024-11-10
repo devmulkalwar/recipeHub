@@ -1,16 +1,14 @@
-import mongoose, { Schema } from "mongoose"; // Import Schema from mongoose
-import bcrypt from "bcrypt"; // Ensure you import bcrypt for password comparison
+import mongoose, { Schema } from "mongoose";
+import bcrypt from "bcrypt";
 
 const UserSchema = new Schema(
   {
     name: {
       type: String,
-      required: true,
       trim: true,
     },
     username: {
       type: String,
-      required: true,
       unique: true,
       trim: true,
     },
@@ -18,7 +16,6 @@ const UserSchema = new Schema(
       type: String,
       required: true,
       unique: true,
-      lowercase: true,
       trim: true,
     },
     password: {
@@ -57,11 +54,11 @@ const UserSchema = new Schema(
         ref: "Recipe",
       },
     ],
-    tags:[
+    tags: [
       {
         type: String,
         trim: true,
-      }
+      },
     ],
     createdRecipes: [
       {
@@ -77,6 +74,10 @@ const UserSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    isProfileComplete: {
+      type: Boolean,
+      default: false,
+    },
     resetPasswordToken: String,
     resetPasswordExpiresAt: Date,
     verificationToken: String,
@@ -87,7 +88,5 @@ const UserSchema = new Schema(
   }
 );
 
-
-// Export the User model
 const User = mongoose.model("User", UserSchema);
 export default User;
