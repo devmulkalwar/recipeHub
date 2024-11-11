@@ -1,5 +1,6 @@
 import User from "../models/userModel.js";
 import Recipe from "../models/recipeModel.js";
+import bcryptjs from "bcryptjs";
 import { deleteImageFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
 import dotenv from "dotenv";
@@ -304,6 +305,7 @@ export const createUserProfile = async (req, res) => {
 // Delete user account
 export const deleteUser = async (req, res) => {
   const userId = req.params.id; // Get user ID from the request parameters
+  const password = req.body.password;
   try {
     // Find the user by ID
     const user = await User.findById(userId);
@@ -312,16 +314,23 @@ export const deleteUser = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
+    
+    // Verify the password
+    const isPasswordValid = await bcryptjs.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid password" });
+    }
 
     // Delete the user from the database
     await User.findByIdAndDelete(userId);
-
-    // Optionally, you can also delete the user's profile image from Cloudinary if it exists
     if (user.profileImage) {
       await deleteImageFromCloudinary(user.profileImage);
     }
 
-    res
+    // Clear the cookie and send response
+    res.clearCookie("token")
       .status(200)
       .json({ success: true, message: "User account deleted successfully" });
   } catch (error) {
@@ -334,4 +343,3 @@ export const deleteUser = async (req, res) => {
       });
   }
 };
-

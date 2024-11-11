@@ -15,7 +15,7 @@ import {upload} from "../middlewares/multerMiddleware.js";
 const router = express.Router();
 
 // Get user profile
-router.get('/:id', verifyToken, getUserProfile);
+router.get('/:id', getUserProfile);
 
 // Follow a user
 router.post('/follow', verifyToken, followUser);
