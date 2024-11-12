@@ -14,11 +14,12 @@ import {
   filterRecipes,
 } from '../controllers/recipeController.js';
 import verifyToken from '../middlewares/authMiddleware.js';
+import { upload } from '../middlewares/multerMiddleware.js';
 
 const router = express.Router();
 
-// Create a new recipe
-router.post('/create', verifyToken, createRecipe); 
+// Create a new recipe with image upload and token verification
+router.post('/create-recipe', verifyToken, upload.single('recipeImage'), createRecipe);
 
 // Get a recipe by its ID
 router.get('/:id', getRecipeById);
@@ -39,7 +40,7 @@ router.put('/:id', verifyToken, updateRecipe);
 router.delete('/:id', verifyToken, deleteRecipe);
 
 // Like a recipe
-router.put('/:id/like', verifyToken,likeRecipe);
+router.put('/:id/like', verifyToken, likeRecipe);
 
 // Save a recipe
 router.put('/:id/save', verifyToken, saveRecipe);
@@ -47,8 +48,10 @@ router.put('/:id/save', verifyToken, saveRecipe);
 // Search recipes by name or ingredients
 router.get('/search', searchRecipes);
 
+// Sort recipes
 router.get('/sort', sortRecipes);
 
+// Filter recipes
 router.get('/filter', filterRecipes);
 
 export default router;

@@ -19,6 +19,7 @@ const recipeSchema = new Schema(
     categoryImage: {
       type: String,
       required: true,
+      default: "default_category_image_url "
     },
     cookingTime: {
       type: String,
@@ -49,7 +50,7 @@ const recipeSchema = new Schema(
       ref: 'User',
       required: true,
     },
-    image: {
+    recipeImage: {
       type: String,
       required: true,
     },

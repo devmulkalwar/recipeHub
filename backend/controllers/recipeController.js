@@ -1,10 +1,37 @@
 import Recipe from '../models/recipeModel.js';
 import User from '../models/userModel.js';
+import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import path from 'path'; // Import the 'path' module
+import fs from 'fs';
 
-// Create a new recipe
+
 export const createRecipe = async (req, res) => {
   try {
-    const { title, description, category, cookingTime, difficulty, ingredients, instructions, image, tags } = req.body;
+    const { title, description, category, cookingTime, difficulty, ingredients, instructions, tags } = req.body;
+    const recipeImage = req.file;
+
+    // Ensure the user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({ message: 'Unauthorized - no user ID found' });
+    }
+
+    // Find user
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Upload the recipe image to Cloudinary if provided
+    let recipeImageUrl;
+    if (recipeImage) {
+      const { path } = recipeImage;
+      const cloudinaryResult = await uploadOnCloudinary(path);
+      recipeImageUrl = cloudinaryResult.url;
+    } else {
+      return res.status(400).json({ success: false, message: "Recipe image is required" });
+    }
+
+    // Create a new recipe
     const newRecipe = new Recipe({
       title,
       description,
@@ -13,17 +40,20 @@ export const createRecipe = async (req, res) => {
       difficulty,
       ingredients,
       instructions,
-      image,
       tags,
-      createdBy: req.user.id
+      createdBy: req.userId,
+      recipeImage: recipeImageUrl, // Assuming 'image' is the correct field name in the Recipe schema
     });
 
     await newRecipe.save();
     res.status(201).json(newRecipe);
   } catch (error) {
+    // Log error for debugging purposes
+    console.error('Error creating recipe:', error);
     res.status(500).json({ message: 'Error creating recipe', error: error.message });
   }
 };
+
 
 // Get a recipe by its ID
 export const getRecipeById = async (req, res) => {
