@@ -31,7 +31,6 @@ export const createRecipe = async (req, res) => {
       return res.status(400).json({ success: false, message: "Recipe image is required" });
     }
 
-    // Create a new recipe
     const newRecipe = new Recipe({
       title,
       description,
@@ -54,8 +53,6 @@ export const createRecipe = async (req, res) => {
   }
 };
 
-
-// Get a recipe by its ID
 export const getRecipeById = async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id)
@@ -102,20 +99,60 @@ export const getRecipesByCategory = async (req, res) => {
   }
 };
 
-// Update a recipe by ID
 export const updateRecipe = async (req, res) => {
   try {
-    const recipe = await Recipe.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { title, description, category, cookingTime, difficulty, ingredients, instructions, tags } = req.body;
+    const recipeImage = req.file;
 
+    // Ensure the user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({ message: 'Unauthorized - no user ID found' });
+    }
+
+    // Find user
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const recipe = await Recipe.findById(req.params.id);
     if (!recipe) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
 
-    res.status(200).json(recipe);
+    if (recipe.createdBy.toString() !== req.userId) {
+      return res.status(403).json({ message: 'Unauthorized - cannot update this recipe' });
+    }
+
+    // Upload new image to Cloudinary if provided
+    let recipeImageUrl = recipe.recipeImage;
+    if (recipeImage) {
+      const { path } = recipeImage;
+      const cloudinaryResult = await uploadOnCloudinary(path);
+      recipeImageUrl = cloudinaryResult.url;
+    }
+
+    // Update recipe fields
+    recipe.title = title || recipe.title;
+    recipe.description = description || recipe.description;
+    recipe.category = category || recipe.category;
+    recipe.cookingTime = cookingTime || recipe.cookingTime;
+    recipe.difficulty = difficulty || recipe.difficulty;
+    recipe.ingredients = ingredients || recipe.ingredients;
+    recipe.instructions = instructions || recipe.instructions;
+    recipe.tags = tags || recipe.tags;
+    recipe.recipeImage = recipeImageUrl;
+
+    // Save the updated recipe
+    const updatedRecipe = await recipe.save();
+    res.status(200).json(updatedRecipe);
+
   } catch (error) {
+    console.error('Error updating recipe:', error);
     res.status(500).json({ message: 'Error updating recipe', error: error.message });
   }
 };
+
 
 // Delete a recipe by ID
 export const deleteRecipe = async (req, res) => {
@@ -173,7 +210,7 @@ export const saveRecipe = async (req, res) => {
   }
 };
 
-// Add a comment to a recipe
+
 export const addCommentToRecipe = async (req, res) => {
   try {
     const { commentText } = req.body;
@@ -198,15 +235,15 @@ export const addCommentToRecipe = async (req, res) => {
   }
 };
 
-// Search recipes by name or ingredients
+
 export const searchRecipes = async (req, res) => {
-  const { query } = req.query; // Search query string from the request
+  const { query } = req.query; 
 
   try {
     const recipes = await Recipe.find({
       $or: [
-        { title: { $regex: query, $options: 'i' } },  // Case-insensitive search by title
-        { ingredients: { $regex: query, $options: 'i' } }, // Case-insensitive search by ingredients
+        { title: { $regex: query, $options: 'i' } },  
+        { ingredients: { $regex: query, $options: 'i' } }, 
       ]
     }).populate('createdBy', 'username profileImage');
 
@@ -216,14 +253,14 @@ export const searchRecipes = async (req, res) => {
   }
 };
 
-// Sort recipes by various fields (e.g., date, popularity, cooking time)
+
 export const sortRecipes = async (req, res) => {
-  const { field, order } = req.query; // e.g., 'createdAt', 'popularity', etc.
+  const { field, order } = req.query; 
 
   try {
     const sortOptions = {};
     if (field && order) {
-      sortOptions[field] = order === 'desc' ? -1 : 1; // Sorting in descending or ascending order
+      sortOptions[field] = order === 'desc' ? -1 : 1; 
     }
 
     const recipes = await Recipe.find().sort(sortOptions).populate('createdBy', 'username profileImage');
@@ -234,7 +271,6 @@ export const sortRecipes = async (req, res) => {
   }
 };
 
-// Filter recipes by attributes like difficulty, cooking time, etc.
 export const filterRecipes = async (req, res) => {
   const { category, difficulty, cookingTime } = req.query;
 
@@ -242,7 +278,7 @@ export const filterRecipes = async (req, res) => {
 
   if (category) filters.category = category;
   if (difficulty) filters.difficulty = difficulty;
-  if (cookingTime) filters.cookingTime = { $lte: cookingTime }; // Assuming 'cookingTime' is in minutes
+  if (cookingTime) filters.cookingTime = { $lte: cookingTime }; 
 
   try {
     const recipes = await Recipe.find(filters).populate('createdBy', 'username profileImage');
