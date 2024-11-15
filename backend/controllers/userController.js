@@ -233,7 +233,7 @@ export const updateUserProfile = async (req, res) => {
       user: { ...updatedUser._doc, password: undefined },
     });
   } catch (error) {
-    // If there was an error and a profile image was uploaded, remove the temporary file
+  
     if (profileImage && profileImage.path) {
       fs.unlinkSync(profileImage.path);
     }

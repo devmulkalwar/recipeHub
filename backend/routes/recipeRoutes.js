@@ -34,7 +34,7 @@ router.get('/user/:userId', getRecipesByUser);
 router.get('/category/:category', getRecipesByCategory);
 
 // Update a recipe by ID
-router.put('/:id', verifyToken, updateRecipe);
+router.put('/:id/update-recipe', verifyToken, upload.single('recipeImage'), updateRecipe);
 
 // Delete a recipe by ID
 router.delete('/:id', verifyToken, deleteRecipe);

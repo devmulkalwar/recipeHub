@@ -103,56 +103,65 @@ export const updateRecipe = async (req, res) => {
   try {
     const { title, description, category, cookingTime, difficulty, ingredients, instructions, tags } = req.body;
     const recipeImage = req.file;
+    const recipeId = req.params.id;
 
     // Ensure the user is authenticated
     if (!req.userId) {
       return res.status(401).json({ message: 'Unauthorized - no user ID found' });
     }
 
-    // Find user
+    // Find the user
     const user = await User.findById(req.userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    const recipe = await Recipe.findById(req.params.id);
+    // Find the recipe
+    const recipe = await Recipe.findById(recipeId);
     if (!recipe) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
 
+    // Ensure the user is the creator of the recipe
     if (recipe.createdBy.toString() !== req.userId) {
-      return res.status(403).json({ message: 'Unauthorized - cannot update this recipe' });
+      return res.status(403).json({ message: 'Unauthorized - only the creator can update this recipe' });
     }
 
-    // Upload new image to Cloudinary if provided
+    // Handle recipe image update
     let recipeImageUrl = recipe.recipeImage;
     if (recipeImage) {
       const { path } = recipeImage;
+
+      // Delete the old recipe image from Cloudinary if it exists
+      if (recipe.recipeImage) {
+        await deleteImageFromCloudinary(recipe.recipeImage);
+      }
+
+      // Upload the new image to Cloudinary
       const cloudinaryResult = await uploadOnCloudinary(path);
       recipeImageUrl = cloudinaryResult.url;
     }
 
-    // Update recipe fields
-    recipe.title = title || recipe.title;
-    recipe.description = description || recipe.description;
-    recipe.category = category || recipe.category;
-    recipe.cookingTime = cookingTime || recipe.cookingTime;
-    recipe.difficulty = difficulty || recipe.difficulty;
-    recipe.ingredients = ingredients || recipe.ingredients;
-    recipe.instructions = instructions || recipe.instructions;
-    recipe.tags = tags || recipe.tags;
+    // Update the recipe fields
+    if (title) recipe.title = title;
+    if (description) recipe.description = description;
+    if (category) recipe.category = category;
+    if (cookingTime) recipe.cookingTime = cookingTime;
+    if (difficulty) recipe.difficulty = difficulty;
+    if (ingredients) recipe.ingredients = ingredients;
+    if (instructions) recipe.instructions = instructions;
+    if (tags) recipe.tags = tags;
     recipe.recipeImage = recipeImageUrl;
 
     // Save the updated recipe
-    const updatedRecipe = await recipe.save();
-    res.status(200).json(updatedRecipe);
+    await recipe.save();
 
+    res.status(200).json({ message: 'Recipe updated successfully', recipe });
   } catch (error) {
     console.error('Error updating recipe:', error);
     res.status(500).json({ message: 'Error updating recipe', error: error.message });
   }
 };
-
 
 // Delete a recipe by ID
 export const deleteRecipe = async (req, res) => {
