@@ -25,7 +25,7 @@ router.post('/create-recipe', verifyToken, upload.single('recipeImage'), createR
 router.get('/:id', getRecipeById);
 
 // Get all recipes
-router.get('/', getAllRecipes);
+router.get('/get-recipes', getAllRecipes);
 
 // Get recipes created by a specific user
 router.get('/user/:userId', getRecipesByUser);

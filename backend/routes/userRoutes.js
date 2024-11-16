@@ -24,17 +24,17 @@ router.post('/follow', verifyToken, followUser);
 router.post('/unfollow', verifyToken, unfollowUser);
 
 // Get saved recipes for a user
-router.get('/:id/saved-recipes', verifyToken, getSavedRecipes);
+router.get('/saved-recipes', verifyToken, getSavedRecipes);
 
 // Get liked recipes for a user
-router.get('/:id/liked-recipes', verifyToken, getLikedRecipes);
+router.get('/liked-recipes', verifyToken, getLikedRecipes);
 
 // Update user profile (e.g., bio, profile image, etc.)
-router.put('/:id/update-profile',upload.single('profileImage'),verifyToken, updateUserProfile);
+router.put('/update-profile',upload.single('profileImage'),verifyToken, updateUserProfile);
 
-router.post('/:id/create-profile',upload.single('profileImage'), verifyToken, createUserProfile);
+router.post('/create-profile',upload.single('profileImage'), verifyToken, createUserProfile);
 
 // Delete user account
-router.delete('/:id/delete-user', verifyToken, deleteUser);
+router.delete('/delete-user', verifyToken, deleteUser);
 
 export default router;

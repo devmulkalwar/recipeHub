@@ -1,7 +1,10 @@
 import User from "../models/userModel.js";
 import Recipe from "../models/recipeModel.js";
 import bcryptjs from "bcryptjs";
-import { deleteImageFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteImageFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 import fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
@@ -17,66 +20,89 @@ export const getUserProfile = async (req, res) => {
     }
     res.status(200).json({ success: true, user });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching user profile",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching user profile",
+      error: error.message,
+    });
   }
 };
 
 // Follow a user
 export const followUser = async (req, res) => {
   try {
-    const { userId, targetUserId } = req.body;
+    const userId = req.userId; // User initiating the follow
+    const { targetUserId } = req.body; // User to be followed
+
+    // Validate request data
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized access" });
+    }
+
+    if (!targetUserId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Target user ID is required" });
+    }
+
     if (userId === targetUserId) {
       return res
         .status(400)
         .json({ success: false, message: "You cannot follow yourself" });
     }
 
+    // Fetch user and target user from the database
     const user = await User.findById(userId);
     const targetUser = await User.findById(targetUserId);
 
-    if (!user || !targetUser) {
+    // Check if both users exist
+    if (!user) {
       return res
         .status(404)
-        .json({ success: false, message: "User not found" });
+        .json({ success: false, message: "Your account not found" });
     }
 
-    if (!user.following.includes(targetUserId)) {
-      user.following.push(targetUserId);
-      targetUser.followers.push(userId);
+    if (!targetUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Target user not found" });
+    }
 
-      await user.save();
-      await targetUser.save();
-
-      res
-        .status(200)
-        .json({ success: true, message: "User followed successfully" });
-    } else {
-      res
+    // Check if the user is already following the target user
+    if (user.following.includes(targetUserId)) {
+      return res
         .status(400)
         .json({ success: false, message: "Already following this user" });
     }
+
+    // Update following and followers lists
+    user.following.push(targetUserId);
+    targetUser.followers.push(userId);
+
+    // Save updated data to the database
+    await user.save();
+    await targetUser.save();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "User followed successfully" });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error following user",
-        error: error.message,
-      });
+    // Catch any unexpected errors
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while following the user",
+      error: error.message,
+    });
   }
 };
 
 // Unfollow a user
 export const unfollowUser = async (req, res) => {
   try {
-    const { userId, targetUserId } = req.body;
-
+    const { targetUserId } = req.body;
+    const userId = req.userId;
     const user = await User.findById(userId);
     const targetUser = await User.findById(targetUserId);
 
@@ -106,20 +132,18 @@ export const unfollowUser = async (req, res) => {
         .json({ success: false, message: "You are not following this user" });
     }
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error unfollowing user",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error unfollowing user",
+      error: error.message,
+    });
   }
 };
 
 // Get saved recipes for a user
 export const getSavedRecipes = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).populate("savedRecipes");
+    const user = await User.findById(req.userId).populate("savedRecipes");
     if (!user) {
       return res
         .status(404)
@@ -127,20 +151,18 @@ export const getSavedRecipes = async (req, res) => {
     }
     res.status(200).json({ success: true, savedRecipes: user.savedRecipes });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching saved recipes",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching saved recipes",
+      error: error.message,
+    });
   }
 };
 
 // Get liked recipes for a user
 export const getLikedRecipes = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).populate("likedRecipes");
+    const user = await User.findById(req.userId).populate("likedRecipes");
     if (!user) {
       return res
         .status(404)
@@ -148,13 +170,11 @@ export const getLikedRecipes = async (req, res) => {
     }
     res.status(200).json({ success: true, likedRecipes: user.likedRecipes });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching liked recipes",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching liked recipes",
+      error: error.message,
+    });
   }
 };
 
@@ -170,13 +190,11 @@ export const getCreatedRecipes = async (req, res) => {
     }
     res.status(200).json({ success: true, recipes });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching created recipes",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching created recipes",
+      error: error.message,
+    });
   }
 };
 
@@ -184,8 +202,8 @@ export const getCreatedRecipes = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
   let profileImage; // Declare profileImage outside the try block so it's accessible in the catch block
   try {
-    const userId = req.params.id;
     const { name, username, bio } = req.body;
+    const userId = req.userId;
     profileImage = req.file; // Set profileImage to req.file
 
     const user = await User.findById(userId);
@@ -233,7 +251,6 @@ export const updateUserProfile = async (req, res) => {
       user: { ...updatedUser._doc, password: undefined },
     });
   } catch (error) {
-  
     if (profileImage && profileImage.path) {
       fs.unlinkSync(profileImage.path);
     }
@@ -247,7 +264,7 @@ export const updateUserProfile = async (req, res) => {
 
 // Create user profile
 export const createUserProfile = async (req, res) => {
-  const userId = req.params.id;
+  const userId = req.userId;
   const { name, username, bio } = req.body;
   const profileImage = req.file;
 
@@ -272,7 +289,6 @@ export const createUserProfile = async (req, res) => {
       const { path } = profileImage;
       const cloudinaryResult = await uploadOnCloudinary(path);
       profileImageUrl = cloudinaryResult.url;
-
     }
 
     // Update user profile with new data
@@ -304,7 +320,7 @@ export const createUserProfile = async (req, res) => {
 
 // Delete user account
 export const deleteUser = async (req, res) => {
-  const userId = req.params.id; // Get user ID from the request parameters
+  const userId = req.userId;
   const password = req.body.password;
   try {
     // Find the user by ID
@@ -314,7 +330,7 @@ export const deleteUser = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-    
+
     // Verify the password
     const isPasswordValid = await bcryptjs.compare(password, user.password);
     if (!isPasswordValid) {
@@ -330,16 +346,15 @@ export const deleteUser = async (req, res) => {
     }
 
     // Clear the cookie and send response
-    res.clearCookie("token")
+    res
+      .clearCookie("token")
       .status(200)
       .json({ success: true, message: "User account deleted successfully" });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error deleting user account",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error deleting user account",
+      error: error.message,
+    });
   }
 };

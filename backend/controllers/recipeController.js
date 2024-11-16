@@ -1,7 +1,7 @@
 import Recipe from '../models/recipeModel.js';
 import User from '../models/userModel.js';
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
-import path from 'path'; // Import the 'path' module
+import { deleteImageFromCloudinary, uploadOnCloudinary } from '../utils/cloudinary.js';
+import path from 'path';
 import fs from 'fs';
 
 
