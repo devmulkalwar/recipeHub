@@ -181,20 +181,57 @@ export const deleteRecipe = async (req, res) => {
 // Like a recipe
 export const likeRecipe = async (req, res) => {
   try {
+    const userId = req.userId; // User ID from authenticated request
+
     const recipe = await Recipe.findById(req.params.id);
 
     if (!recipe) {
       return res.status(404).json({ message: 'Recipe not found' });
     }
 
-    recipe.likes += 1; // Increment the likes count
+    // Check if the user has already liked the recipe
+    if (recipe.likes.includes(userId)) {
+      return res.status(400).json({ message: 'You have already liked this recipe' });
+    }
+
+    // Add user to the likes array
+    recipe.likes.push(userId);
     await recipe.save();
 
-    res.status(200).json({ message: 'Recipe liked successfully', likes: recipe.likes });
+    res.status(200).json({ message: 'Recipe liked successfully', likes: recipe.likes.length });
   } catch (error) {
     res.status(500).json({ message: 'Error liking recipe', error: error.message });
   }
 };
+
+
+// unlike a recipe
+export const unlikeRecipe = async (req, res) => {
+  try {
+    const userId = req.userId; // User ID from authenticated request
+
+    const recipe = await Recipe.findById(req.params.id);
+
+    if (!recipe) {
+      return res.status(404).json({ message: 'Recipe not found' });
+    }
+
+    // Check if the user has liked the recipe
+    if (!recipe.likes.includes(userId)) {
+      return res.status(400).json({ message: 'You have not liked this recipe' });
+    }
+
+    // Remove user from the likes array
+    recipe.likes = recipe.likes.filter((like) => like.toString() !== userId);
+    await recipe.save();
+
+    res.status(200).json({ message: 'Recipe unliked successfully', likes: recipe.likes.length });
+  } catch (error) {
+    res.status(500).json({ message: 'Error unliking recipe', error: error.message });
+  }
+};
+
+
 
 // Save a recipe
 export const saveRecipe = async (req, res) => {

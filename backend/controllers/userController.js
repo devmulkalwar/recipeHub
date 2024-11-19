@@ -200,11 +200,11 @@ export const getCreatedRecipes = async (req, res) => {
 
 // Update user profile
 export const updateUserProfile = async (req, res) => {
-  let profileImage; // Declare profileImage outside the try block so it's accessible in the catch block
+  let profileImage; 
   try {
     const { name, username, bio } = req.body;
     const userId = req.userId;
-    profileImage = req.file; // Set profileImage to req.file
+    profileImage = req.file; 
 
     const user = await User.findById(userId);
     if (!user) {

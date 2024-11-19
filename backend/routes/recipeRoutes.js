@@ -12,6 +12,7 @@ import {
   searchRecipes,
   sortRecipes,
   filterRecipes,
+  unlikeRecipe,
 } from '../controllers/recipeController.js';
 import verifyToken from '../middlewares/authMiddleware.js';
 import { upload } from '../middlewares/multerMiddleware.js';
@@ -41,6 +42,9 @@ router.delete('/:id', verifyToken, deleteRecipe);
 
 // Like a recipe
 router.put('/:id/like', verifyToken, likeRecipe);
+
+// unike a recipe
+router.put('/:id/unlike', verifyToken, unlikeRecipe);
 
 // Save a recipe
 router.put('/:id/save', verifyToken, saveRecipe);
