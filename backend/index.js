@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from './routes/authRoutes.js'; // Importing authentication routes
 import userRoutes from './routes/userRoutes.js'; // Importing user routes
 import recipeRoutes from './routes/recipeRoutes.js'; // Importing recipe routes
+import commentRoutes from './routes/commentRoutes.js'; // Import comments
 import { connectDB } from './config/connectDB.js'; // Import database connection function
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use(express.json()); // For parsing application/json
 app.use('/api/auth', authRoutes); // Mounting authentication routes
 app.use('/api/users', userRoutes); // Mounting user routes
 app.use('/api/recipes', recipeRoutes); // Mounting recipe routes
+app.use('/api/comments', commentRoutes);
 
 // Default route
 app.get('/', (req, res) => {

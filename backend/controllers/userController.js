@@ -198,6 +198,62 @@ export const getCreatedRecipes = async (req, res) => {
   }
 };
 
+// Create user profile
+export const createUserProfile = async (req, res) => {
+  const userId = req.userId;
+  const { name, username, bio } = req.body;
+  const profileImage = req.file;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    if (user.name && user.username) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Profile already completed" });
+    }
+
+    let profileImageUrl = user.profileImage;
+
+    // Upload the new profile image to Cloudinary if provided
+    if (profileImage) {
+      const { path } = profileImage;
+      const cloudinaryResult = await uploadOnCloudinary(path);
+      profileImageUrl = cloudinaryResult.url;
+    }
+
+    // Update user profile with new data
+    user.name = name || user.name;
+    user.username = username || user.username;
+    user.profileImage = profileImageUrl;
+    user.bio = bio || user.bio;
+    user.isProfileComplete = true;
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile completed successfully",
+      user: { ...updatedUser._doc, password: undefined },
+    });
+  } catch (error) {
+    // Clean up temporary image file if there was an error during the process
+    if (profileImage && profileImage.path) {
+      fs.unlinkSync(profileImage.path);
+    }
+    res.status(500).json({
+      success: false,
+      message: "Error completing profile",
+      error: error.message,
+    });
+  }
+};
+
 // Update user profile
 export const updateUserProfile = async (req, res) => {
   let profileImage; 
@@ -257,62 +313,6 @@ export const updateUserProfile = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error updating user profile",
-      error: error.message,
-    });
-  }
-};
-
-// Create user profile
-export const createUserProfile = async (req, res) => {
-  const userId = req.userId;
-  const { name, username, bio } = req.body;
-  const profileImage = req.file;
-
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
-
-    if (user.name && user.username) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Profile already completed" });
-    }
-
-    let profileImageUrl = user.profileImage;
-
-    // Upload the new profile image to Cloudinary if provided
-    if (profileImage) {
-      const { path } = profileImage;
-      const cloudinaryResult = await uploadOnCloudinary(path);
-      profileImageUrl = cloudinaryResult.url;
-    }
-
-    // Update user profile with new data
-    user.name = name || user.name;
-    user.username = username || user.username;
-    user.profileImage = profileImageUrl;
-    user.bio = bio || user.bio;
-    user.isProfileComplete = true;
-
-    const updatedUser = await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Profile completed successfully",
-      user: { ...updatedUser._doc, password: undefined },
-    });
-  } catch (error) {
-    // Clean up temporary image file if there was an error during the process
-    if (profileImage && profileImage.path) {
-      fs.unlinkSync(profileImage.path);
-    }
-    res.status(500).json({
-      success: false,
-      message: "Error completing profile",
       error: error.message,
     });
   }

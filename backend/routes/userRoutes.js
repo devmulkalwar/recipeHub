@@ -29,10 +29,11 @@ router.get('/saved-recipes', verifyToken, getSavedRecipes);
 // Get liked recipes for a user
 router.get('/liked-recipes', verifyToken, getLikedRecipes);
 
+// Create a new user profile (e.g., bio, profile image, etc.)
+router.post('/create-profile',upload.single('profileImage'), verifyToken, createUserProfile);
+
 // Update user profile (e.g., bio, profile image, etc.)
 router.put('/update-profile',upload.single('profileImage'),verifyToken, updateUserProfile);
-
-router.post('/create-profile',upload.single('profileImage'), verifyToken, createUserProfile);
 
 // Delete user account
 router.delete('/delete-user', verifyToken, deleteUser);

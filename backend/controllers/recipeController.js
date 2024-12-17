@@ -257,31 +257,6 @@ export const saveRecipe = async (req, res) => {
 };
 
 
-export const addCommentToRecipe = async (req, res) => {
-  try {
-    const { commentText } = req.body;
-
-    if (!commentText) {
-      return res.status(400).json({ message: 'Comment text is required' });
-    }
-
-    const recipe = await Recipe.findById(req.params.id);
-
-    if (!recipe) {
-      return res.status(404).json({ message: 'Recipe not found' });
-    }
-
-    // Add the comment
-    recipe.comments.push({ text: commentText, createdBy: req.user.id });
-    await recipe.save();
-
-    res.status(200).json({ message: 'Comment added successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error adding comment to recipe', error: error.message });
-  }
-};
-
-
 export const searchRecipes = async (req, res) => {
   const { query } = req.query; 
 

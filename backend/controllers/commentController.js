@@ -3,21 +3,37 @@ import Comment from '../models/commentModel.js';
 
 import Recipe from '../models/recipeModel.js'; 
 
-// Add a new comment
 export const addComment = async (req, res) => {
     try {
-        const { recipeId, text } = req.body;
+        const { text } = req.body; // Comment text
+        const { recipeId } = req.params; // Recipe ID
+
+        // Create a new comment
         const comment = await Comment.create({
-            user: req.user.id, // Assuming req.user contains the authenticated user's ID
+            user: req.userId, // Current logged-in user ID (assumes middleware adds this)
             text,
         });
 
-        // Optional: add comment to recipe's comments array
-        await Recipe.findByIdAndUpdate(recipeId, { $push: { comments: comment._id } });
+        // Add comment ID to the recipe's comments array
+        const updatedRecipe = await Recipe.findByIdAndUpdate(
+            recipeId,
+            { $push: { comments: comment._id } },
+            { new: true }
+        ).populate({
+            path: 'comments',
+            populate: {
+                path: 'user',
+                select: 'username profileImage',
+            },
+        });
 
-        res.status(201).json(comment);
+        if (!updatedRecipe) {
+            return res.status(404).json({ message: 'Recipe not found.' });
+        }
+
+        res.status(201).json({ message: 'Comment added successfully', recipe: updatedRecipe });
     } catch (error) {
-        res.status(500).json({ message: "Error adding comment", error });
+        res.status(500).json({ message: 'Error adding comment', error });
     }
 };
 
