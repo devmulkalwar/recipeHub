@@ -231,8 +231,6 @@ export const unlikeRecipe = async (req, res) => {
   }
 };
 
-
-
 // Save a recipe
 export const saveRecipe = async (req, res) => {
   try {
@@ -242,7 +240,7 @@ export const saveRecipe = async (req, res) => {
       return res.status(404).json({ message: 'Recipe not found' });
     }
 
-    const user = await User.findById(req.user.id); // Assuming the user is authenticated
+    const user = await User.findById(req.userId); // Assuming the user is authenticated
 
     // Add the recipe to savedRecipes if not already saved
     if (!user.savedRecipes.includes(recipe._id)) {
