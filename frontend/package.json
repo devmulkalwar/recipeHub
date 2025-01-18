@@ -18,6 +18,7 @@
     "@heroicons/react": "^2.1.5",
     "@material-tailwind/react": "^2.1.10",
     "axios": "^1.7.7",
+    "cross-spawn": "^7.0.5",
     "fontawesome": "^5.6.3",
     "fortawesome": "^0.0.1-security",
     "react": "^18.3.1",
