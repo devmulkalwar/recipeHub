@@ -16,12 +16,18 @@ import {
 } from '../controllers/recipeController.js';
 import verifyToken from '../middlewares/authMiddleware.js';
 import checkProfileComplete from '../middlewares/profileMiddleware.js';
-import { upload } from '../middlewares/multerMiddleware.js';
+import { recipeUpload } from '../middlewares/multerMiddleware.js';
 
 const router = express.Router();
 
 // Create a new recipe with image upload and token verification
-router.post('/create-recipe', verifyToken, checkProfileComplete, upload.single('recipeImage'), createRecipe);
+router.post(
+  '/create-recipe',
+  verifyToken,
+  checkProfileComplete,
+  recipeUpload.single('recipeImage'),
+  createRecipe
+);
 
 // Get a recipe by its ID
 router.get('/:id', getRecipeById);
@@ -35,8 +41,8 @@ router.get('/user/:userId', getRecipesByUser);
 // Get recipes by category
 router.get('/category/:category', getRecipesByCategory);
 
-// Update a recipe by ID
-router.put('/:id/update-recipe', verifyToken, upload.single('recipeImage'), updateRecipe);
+// Update a recipe by ID - Fix the upload reference
+router.put('/:id/update-recipe', verifyToken, recipeUpload.single('recipeImage'), updateRecipe);
 
 // Delete a recipe by ID
 router.delete('/:id', verifyToken, deleteRecipe);

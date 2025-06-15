@@ -6,32 +6,52 @@ import fs from 'fs';
 
 
 export const createRecipe = async (req, res) => {
+  let tempFilePath = null;
   try {
-    const { title, description, category, cookingTime, difficulty, ingredients, instructions, tags } = req.body;
-    const recipeImage = req.file;
+    console.log('Create recipe request:', {
+      body: req.body,
+      file: req.file,
+      userId: req.userId
+    });
 
-    // Ensure the user is authenticated
-    if (!req.userId) {
-      return res.status(401).json({ message: 'Unauthorized - no user ID found' });
+    // Validate request
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipe image is required"
+      });
     }
 
-    // Find user
-    const user = await User.findById(req.userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+    // Save temp file path
+    tempFilePath = req.file.path;
+
+    // Upload image with retries
+    let recipeImage = null;
+    let uploadAttempts = 3;
+
+    while (uploadAttempts > 0) {
+      try {
+        console.log(`Attempting to upload image (attempt ${4 - uploadAttempts})`);
+        const uploadResult = await uploadOnCloudinary(tempFilePath);
+        
+        if (uploadResult?.secure_url) {
+          recipeImage = uploadResult.secure_url;
+          console.log('Image uploaded successfully:', recipeImage);
+          break;
+        }
+      } catch (uploadError) {
+        console.error(`Upload attempt ${4 - uploadAttempts} failed:`, uploadError);
+        if (uploadAttempts === 1) throw uploadError;
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+      }
+      uploadAttempts--;
     }
 
-    // Upload the recipe image to Cloudinary if provided
-    let recipeImageUrl;
-    if (recipeImage) {
-      const { path } = recipeImage;
-      const cloudinaryResult = await uploadOnCloudinary(path);
-      recipeImageUrl = cloudinaryResult.url;
-    } else {
-      return res.status(400).json({ success: false, message: "Recipe image is required" });
+    if (!recipeImage) {
+      throw new Error('Failed to upload recipe image after multiple attempts');
     }
 
-    const newRecipe = new Recipe({
+    const {
       title,
       description,
       category,
@@ -39,17 +59,69 @@ export const createRecipe = async (req, res) => {
       difficulty,
       ingredients,
       instructions,
-      tags,
-      createdBy: req.userId,
-      recipeImage: recipeImageUrl, // Assuming 'image' is the correct field name in the Recipe schema
+      tags
+    } = req.body;
+
+    // Validate required fields
+    if (!title || !description || !category || !cookingTime || !difficulty) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields"
+      });
+    }
+
+    // Parse arrays from form data
+    const parsedIngredients = Array.isArray(ingredients) 
+      ? ingredients 
+      : ingredients.split(',').map(item => item.trim());
+
+    const parsedInstructions = Array.isArray(instructions)
+      ? instructions
+      : instructions.split(',').map(item => item.trim());
+
+    const parsedTags = tags 
+      ? Array.isArray(tags) 
+        ? tags 
+        : tags.split(',').map(item => item.trim())
+      : [];
+
+    // Create recipe
+    const recipe = await Recipe.create({
+      title,
+      description,
+      category,
+      cookingTime,
+      difficulty,
+      ingredients: parsedIngredients,
+      instructions: parsedInstructions,
+      tags: parsedTags,
+      recipeImage,
+      createdBy: req.userId
     });
 
-    await newRecipe.save();
-    res.status(201).json(newRecipe);
+    await recipe.populate('createdBy', 'name username profileImage');
+
+    res.status(201).json({
+      success: true,
+      message: "Recipe created successfully",
+      recipe
+    });
+
   } catch (error) {
-    // Log error for debugging purposes
-    console.error('Error creating recipe:', error);
-    res.status(500).json({ message: 'Error creating recipe', error: error.message });
+    console.error("Create recipe error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to create recipe"
+    });
+  } finally {
+    // Clean up temp file
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
+      try {
+        fs.unlinkSync(tempFilePath);
+      } catch (err) {
+        console.error("Error cleaning up temp file:", err);
+      }
+    }
   }
 };
 
@@ -307,3 +379,5 @@ export const filterRecipes = async (req, res) => {
     res.status(500).json({ message: 'Error filtering recipes', error: error.message });
   }
 };
+
+
