@@ -1,6 +1,10 @@
 import React, { createContext, useState } from 'react';
 import axios from 'axios';
 
+// Configure axios defaults
+axios.defaults.baseURL = 'http://localhost:3000';
+axios.defaults.withCredentials = true;
+
 export const RecipeContext = createContext();
 
 export const RecipeProvider = ({ children }) => {
@@ -50,11 +54,101 @@ export const RecipeProvider = ({ children }) => {
     }
   };
 
+  const getAllRecipes = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/recipes/get-recipes', {
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success) {
+        return response.data.recipes;
+      }
+      throw new Error(response.data.message || 'Failed to fetch recipes');
+    } catch (error) {
+      console.error('Error fetching recipes:', error);
+      setError(error.response?.data?.message || 'Failed to fetch recipes');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const searchRecipes = async (query) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`/api/recipes/search?query=${query}`);
+      return response.data;
+    } catch (error) {
+      setError(error.response?.data?.message || 'Search failed');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterRecipes = async (filters) => {
+    try {
+      setLoading(true);
+      const queryString = new URLSearchParams(filters).toString();
+      const response = await axios.get(`/api/recipes/filter?${queryString}`);
+      return response.data;
+    } catch (error) {
+      setError(error.response?.data?.message || 'Filter failed');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const likeRecipe = async (recipeId) => {
+    try {
+      const response = await axios.put(`/api/recipes/${recipeId}/like`, null, {
+        withCredentials: true
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to like recipe');
+    }
+  };
+
+  const unlikeRecipe = async (recipeId) => {
+    try {
+      const response = await axios.put(`/api/recipes/${recipeId}/unlike`, null, {
+        withCredentials: true
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to unlike recipe');
+    }
+  };
+
+  const saveRecipe = async (recipeId) => {
+    try {
+      const response = await axios.put(`/api/recipes/${recipeId}/save`, null, {
+        withCredentials: true
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to save recipe');
+    }
+  };
+
   const value = {
     recipes,
     loading,
     error,
-    createRecipe
+    createRecipe,
+    getAllRecipes,
+    searchRecipes,
+    filterRecipes,
+    likeRecipe,
+    unlikeRecipe,
+    saveRecipe
   };
 
   return <RecipeContext.Provider value={value}>{children}</RecipeContext.Provider>;

@@ -2,8 +2,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Set default base URL for axios
+// Configure axios defaults if not already set
 axios.defaults.baseURL = 'http://localhost:3000';
+axios.defaults.withCredentials = true;
 
 const AuthContext = createContext();
 
@@ -19,7 +20,13 @@ const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await axios.get('/api/auth/check-auth', { withCredentials: true });
+      const response = await axios.get('/api/auth/check-auth', {
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
       if (response.data.success) {
         setUser({
           ...response.data.user,
@@ -30,7 +37,7 @@ const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('Auth check failed:', err);
-      setUser(null); // Clear user on auth check failure
+      setUser(null);
     } finally {
       setLoading(false);
     }

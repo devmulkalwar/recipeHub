@@ -29,40 +29,32 @@ router.post(
   createRecipe
 );
 
-// Get a recipe by its ID
-router.get('/:id', getRecipeById);
-
-// Get all recipes
+// Fix the route ordering and paths
+// Get all recipes - Move this route before the :id route to prevent conflicts
 router.get('/get-recipes', getAllRecipes);
 
-// Get recipes created by a specific user
-router.get('/user/:userId', getRecipesByUser);
+// Get filtered recipes
+router.get('/filter', filterRecipes);
+
+// Search recipes
+router.get('/search', searchRecipes);
 
 // Get recipes by category
 router.get('/category/:category', getRecipesByCategory);
 
-// Update a recipe by ID - Fix the upload reference
+// Get recipes by user
+router.get('/user/:userId', getRecipesByUser);
+
+// These routes should come after the more specific routes
+router.get('/:id', getRecipeById);
 router.put('/:id/update-recipe', verifyToken, recipeUpload.single('recipeImage'), updateRecipe);
-
-// Delete a recipe by ID
 router.delete('/:id', verifyToken, deleteRecipe);
-
-// Like a recipe
 router.put('/:id/like', verifyToken, likeRecipe);
-
-// unike a recipe
 router.put('/:id/unlike', verifyToken, unlikeRecipe);
-
-// Save a recipe
 router.put('/:id/save', verifyToken, saveRecipe);
-
-// Search recipes by name or ingredients
-router.get('/search', searchRecipes);
 
 // Sort recipes
 router.get('/sort', sortRecipes);
 
-// Filter recipes
-router.get('/filter', filterRecipes);
-
 export default router;
+

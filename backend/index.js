@@ -16,17 +16,19 @@ const app = express();
 // Connect to the database
 connectDB();
 
-// Middleware
+// CORS configuration with credentials
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'], // Add Vite's default port
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+  origin: 'http://localhost:5173', // Vite's default port
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['set-cookie']
 }));
 
+// Middleware order is important
 app.use(cookieParser());
-app.use(express.json({ limit: '50mb' })); // For parsing application/json
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Ensure uploads directory exists
 app.use('/uploads', express.static(path.join(process.cwd(), 'backend/public/uploads')));
@@ -43,7 +45,11 @@ app.get('/', (req, res) => {
 });
 
 // Start the server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
+
+// More descriptive server startup
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`API URL: http://localhost:${PORT}`);
+  console.log('CORS enabled for origin:', 'http://localhost:5173');
 });

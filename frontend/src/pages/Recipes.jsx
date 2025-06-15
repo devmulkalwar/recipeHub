@@ -1,75 +1,79 @@
-import React, { useState } from "react";
-import { FaFilter } from "react-icons/fa"; // Import a filter icon
-import fakeData from "../data/generateFakeData";
+import React, { useState, useEffect } from "react";
+import { FaFilter } from "react-icons/fa";
 import RecipeCard from "../components/RecipeCard";
+import useRecipe from '../contexts/useRecipeContext';
 
 const Recipes = () => {
+  const { getAllRecipes, searchRecipes, filterRecipes, loading } = useRecipe();
+  const [recipes, setRecipes] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
-    ingredients: [],
-    creators: [],
-    popularity: "all",
-    cookingTime: "all",
+    category: "all",
     difficulty: "all",
-    categories: "all",
-    tags: [],
+    cookingTime: "all",
   });
-  
-  const [showFilters, setShowFilters] = useState(false); // State to toggle filters
-  const [currentPage, setCurrentPage] = useState(1); // State for current page
-  const recipesPerPage = 12; // Number of recipes per page
 
-  const { recipes } = fakeData;
+  const recipesPerPage = 12;
 
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page on search
+  useEffect(() => {
+    fetchRecipes();
+  }, []);
+
+  const fetchRecipes = async () => {
+    try {
+      const data = await getAllRecipes();
+      setRecipes(data);
+    } catch (error) {
+      console.error('Error fetching recipes:', error);
+    }
   };
 
-  const applyFilters = (recipe) => {
-    const matchesSearchTerm =
-      recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipe.description.toLowerCase().includes(searchTerm.toLowerCase());
+  const handleSearch = async (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setCurrentPage(1);
 
-    const matchesPopularity =
-      filters.popularity === "all" ||
-      (filters.popularity === "latest" && new Date(recipe.createdAt) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) || 
-      (filters.popularity === "popular" && recipe.likes > 100); 
-
-    const matchesCookingTime =
-      filters.cookingTime === "all" ||
-      (filters.cookingTime === "less_30" && recipe.cookingTime === "Less than 30 min") ||
-      (filters.cookingTime === "30_60" && recipe.cookingTime === "30-60 min") ||
-      (filters.cookingTime === "more_60" && recipe.cookingTime === "More than 60 min");
-
-    const matchesDifficulty =
-      filters.difficulty === "all" || recipe.difficulty === filters.difficulty;
-
-    const matchesCategory =
-      filters.categories === "all" || recipe.category === filters.categories;
-
-    const matchesIngredients =
-      filters.ingredients.length === 0 || filters.ingredients.every(ingredient => recipe.ingredients.includes(ingredient));
-
-    return (
-      matchesSearchTerm &&
-      matchesPopularity &&
-      matchesCookingTime &&
-      matchesDifficulty &&
-      matchesCategory
-    );
+    try {
+      if (value.trim()) {
+        const results = await searchRecipes(value);
+        setRecipes(results);
+      } else {
+        fetchRecipes();
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    }
   };
 
-  // Get filtered recipes
-  const filteredRecipes = recipes.filter(applyFilters);
+  const handleFilterChange = async (e) => {
+    const { name, value } = e.target;
+    const newFilters = { ...filters, [name]: value };
+    setFilters(newFilters);
+    setCurrentPage(1);
+
+    try {
+      const activeFilters = Object.fromEntries(
+        Object.entries(newFilters).filter(([_, v]) => v !== 'all')
+      );
+      
+      if (Object.keys(activeFilters).length > 0) {
+        const results = await filterRecipes(activeFilters);
+        setRecipes(results);
+      } else {
+        fetchRecipes();
+      }
+    } catch (error) {
+      console.error('Filter error:', error);
+    }
+  };
 
   // Calculate pagination
   const indexOfLastRecipe = currentPage * recipesPerPage;
   const indexOfFirstRecipe = indexOfLastRecipe - recipesPerPage;
-  const currentRecipes = filteredRecipes.slice(indexOfFirstRecipe, indexOfLastRecipe);
-
-  // Calculate total pages
-  const totalPages = Math.ceil(filteredRecipes.length / recipesPerPage);
+  const currentRecipes = recipes.slice(indexOfFirstRecipe, indexOfLastRecipe);
+  const totalPages = Math.ceil(recipes.length / recipesPerPage);
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-50 p-4">
@@ -97,9 +101,8 @@ const Recipes = () => {
       <div className={`flex flex-wrap gap-4 mb-4 w-full max-w-5xl ${showFilters ? "block" : "hidden md:flex md:justify-center "}`}>
         {/* Popularity Filter */}
         <select
-          onChange={(e) =>
-            setFilters({ ...filters, popularity: e.target.value })
-          }
+          name="popularity"
+          onChange={handleFilterChange}
           className="p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 flex-1 md:flex-none"
         >
           <option value="all">All</option>
@@ -109,9 +112,8 @@ const Recipes = () => {
 
         {/* Cooking Time Filter */}
         <select
-          onChange={(e) =>
-            setFilters({ ...filters, cookingTime: e.target.value })
-          }
+          name="cookingTime"
+          onChange={handleFilterChange}
           className="p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 flex-1 md:flex-none"
         >
           <option value="all">All Cooking Times</option>
@@ -122,9 +124,8 @@ const Recipes = () => {
 
         {/* Difficulty Filter */}
         <select
-          onChange={(e) =>
-            setFilters({ ...filters, difficulty: e.target.value })
-          }
+          name="difficulty"
+          onChange={handleFilterChange}
           className="p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 flex-1 md:flex-none"
         >
           <option value="all">All Difficulties</option>
@@ -135,9 +136,8 @@ const Recipes = () => {
 
         {/* Categories Filter */}
         <select
-          onChange={(e) =>
-            setFilters({ ...filters, categories: e.target.value })
-          }
+          name="category"
+          onChange={handleFilterChange}
           className="p-2 border border-gray-300 rounded bg-white focus:ring focus:ring-orange-500 flex-1 md:flex-none"
         >
           <option value="all">All Categories</option>
@@ -148,10 +148,16 @@ const Recipes = () => {
         </select>
       </div>
 
-      <div className="grid grid-cols-1  md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl">
-        {currentRecipes.map((recipe, index) => (
-          <RecipeCard key={index} recipe={recipe} />
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl">
+        {loading ? (
+          <div className="col-span-full flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          </div>
+        ) : (
+          currentRecipes.map((recipe) => (
+            <RecipeCard key={recipe._id} recipe={recipe} />
+          ))
+        )}
       </div>
 
       {/* Pagination Controls */}

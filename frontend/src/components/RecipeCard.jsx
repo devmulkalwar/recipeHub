@@ -16,25 +16,30 @@ const RecipeCard = ({ recipe }) => {
   const [isFollowing, setIsFollowing] = useState(false);
 
   if (!recipe) {
-    return <div>No recipe available</div>;
+    return null;
   }
 
   const {
-    id,
-    title = "Untitled Recipe",
-    cookingTime = "N/A",
-    difficulty = "Unknown",
-    likes = 0,
+    _id,
+    title,
+    description,
+    cookingTime,
+    difficulty,
+    likes = [],
     comments = [],
-    image,
+    recipeImage,
     tags = [],
-    createdAt = "Unknown",
+    createdAt,
     createdBy,
-    createdByDetails = {
-      username: "Anonymous",
-      profileImage: "default-profile.jpg",
-    },
   } = recipe;
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   const getDifficultyColor = (level) => {
     switch (level) {
@@ -60,23 +65,24 @@ const RecipeCard = ({ recipe }) => {
         {/* Profile Section */}
         <div className="flex items-center gap-2">
           <img
-            src={createdByDetails.profileImage}
+            src={createdBy?.profileImage || "/placeholder-avatar.png"}
             alt="Profile"
             className="w-10 h-10 rounded-full object-cover"
+            onError={(e) => {
+              e.target.src = "/placeholder-avatar.png";
+            }}
           />
           <div className="flex flex-col">
-            <Link to={`/profile/${createdBy}`}>
+            <Link to={`/profile/${createdBy?._id}`}>
               <Typography
                 variant="h6"
                 className="text-gray-800 font-semibold hover:underline"
               >
-                {createdByDetails.username}
+                {createdBy?.username || "Anonymous"}
               </Typography>
             </Link>
             <Typography variant="small" className="text-gray-500 text-xs">
-              {createdAt
-                ? new Date(createdAt).toLocaleDateString()
-                : "Date not available"}
+              {formatDate(createdAt)}
             </Typography>
           </div>
         </div>
@@ -91,41 +97,34 @@ const RecipeCard = ({ recipe }) => {
       </div>
 
       {/* Recipe Image */}
-      <img
-        src={image || "fallback-image-url.jpg"}
-        alt={title}
-        className="w-full h-48 object-cover"
-      />
+      <Link to={`/recipe/${_id}`}>
+        <div className="relative pt-[75%] overflow-hidden">
+          <img
+            src={recipeImage || "/placeholder-recipe.jpg"}
+            alt={title}
+            className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+            onError={(e) => {
+              e.target.src = "/placeholder-recipe.jpg";
+            }}
+          />
+        </div>
+      </Link>
 
       {/* Recipe Details */}
       <div className="p-4 flex flex-col flex-grow">
-        <div className="flex justify-between items-center gap-2 h-12">
-          <Typography
-            variant="h5"
-            className="text-gray-800 font-bold mb-2 line-clamp-2"
-            style={{
-              display: "-webkit-box",
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-              WebkitLineClamp: 2,
-              maxHeight: "3rem",
-            }}
-          >
+        <Link to={`/recipe/${_id}`}>
+          <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 hover:text-orange-600 transition-colors">
             {title}
-          </Typography>
-        </div>
-      </div>
+          </h3>
+        </Link>
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{description}</p>
 
-      {/* Action Buttons and View Details Button */}
-      <div className="px-4 pb-4 flex gap-2 flex-col mt-auto">
-        {/* Cooking Time and Difficulty Badge */}
-        <div className="flex justify-between items-center text-gray-600 mt-2">
-          <div className="flex justify-center items-center">
+        {/* Cooking Time and Difficulty */}
+        <div className="flex justify-between items-center text-gray-600 mb-4">
+          <div className="flex items-center">
             <AiFillClockCircle className="mr-1" />
-            <span>{cookingTime}</span>
+            <span>{cookingTime} min</span>
           </div>
-
-          {/* Difficulty Badge */}
           <span
             className={`px-2 py-1 rounded-md text-xs ${getDifficultyColor(
               difficulty
@@ -137,70 +136,57 @@ const RecipeCard = ({ recipe }) => {
 
         {/* Tags */}
         {tags.length > 0 && (
-          <div className="flex flex-wrap items-center mt-2 max-h-10 overflow-hidden">
-            {tags.slice(0, 3).map((tag, index) => (
+          <div className="flex flex-wrap gap-1 mb-4">
+            {tags.map((tag, index) => (
               <span
                 key={index}
-                className="m-1.5 bg-orange-200 text-orange-800 text-xs font-semibold px-2.5 py-0.5 rounded"
+                className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full"
               >
-                {tag}
+                #{tag}
               </span>
             ))}
-            {tags.length > 3 && (
-              <span className="text-gray-600 text-xs font-semibold p-1">
-                +{tags.length - 3}
-              </span>
-            )}
           </div>
         )}
 
-        <div className="flex justify-evenly items-center mt-auto space-x-2">
+        {/* Action Buttons */}
+        <div className="flex justify-between items-center mt-auto">
           <Button
-            variant="outlined"
-            className="flex items-center justify-center text-gray-700 border-gray-300 hover:bg-gray-200 w-1/3 h-10"
+            variant="text"
+            className="flex items-center gap-2"
             onClick={() => setIsLiked(!isLiked)}
           >
             {isLiked ? (
-              <AiFillLike className="h-5 w-5 mr-1 text-orange-500" />
+              <AiFillLike className="text-orange-500" />
             ) : (
               <AiOutlineLike className="h-5 w-5 mr-1" />
             )}
-            {likes + (isLiked ? 1 : 0)}
+            <span>{likes.length}</span>
           </Button>
 
           <Button
-            variant="outlined"
-            className="flex items-center justify-center text-gray-700 border-gray-300 hover:bg-gray-200 w-1/3 h-10"
+            variant="text"
+            className="flex items-center gap-2"
           >
             <AiOutlineComment className="h-5 w-5 mr-1" />
-            {comments.length}
+            <span>{comments.length}</span>
           </Button>
 
           <Button
-            variant="outlined"
-            className="flex items-center justify-center text-gray-700 border-gray-300 hover:bg-gray-200 w-1/3 h-10"
+            variant="text"
+            className="flex items-center gap-2"
             onClick={() => setIsSaved(!isSaved)}
           >
             {isSaved ? (
-              <FilledBookmarkIcon className="w-5 h-5 mr-1 text-orange-500" />
+              <FilledBookmarkIcon className="h-5 w-5 text-orange-500" />
             ) : (
-              <OutlineBookmarkIcon className="w-5 h-5 mr-1" />
+              <OutlineBookmarkIcon className="h-5 w-5" />
             )}
           </Button>
         </div>
-
-        {/* View Details Button */}
-        <Link to={`/recipe-details/${id}`} className="max-w-full mt-2">
-          <Button
-            variant="filled"
-            className="w-full text-white bg-orange-500 hover:bg-orange-600"
-          >
-            View Details
-          </Button>
-        </Link>
       </div>
     </div>
   );
 };
 
 export default RecipeCard;
+      
