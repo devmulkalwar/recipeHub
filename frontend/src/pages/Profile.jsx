@@ -1,191 +1,148 @@
 import React, { useState, useEffect } from "react";
-import { Button, Typography } from "@material-tailwind/react";
-import {
-  Avatar,
-  Tabs,
-  TabsHeader,
-  TabsBody,
-  Tab,
-  TabPanel,
-} from "@material-tailwind/react";
-import { FaBookmark, FaPizzaSlice } from "react-icons/fa";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { FaBookmark, FaPizzaSlice, FaEdit } from "react-icons/fa";
 import { RecipeCard } from "../components/components.js";
-import fakeData from "../data/generateFakeData.js";
-import useAuth from "../contexts/useAuthContext.js";
-import { Link, useParams } from "react-router-dom"; // Import Link
+import useAuth from "../contexts/useAuthContext";
+import axios from "axios";
 
 const Profile = () => {
-  const { user: loggedInUser } = useAuth(null); // Use useAuth to get the logged-in user
-  const { id } = useParams(); // userId from URL
-  const [user, setUser] = useState(null); // State for the current user
+  const { user: loggedInUser } = useAuth();
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("created");
-  const [isAuthenticated , setIsAuthenticated] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("Logged-in User:", loggedInUser);
-    console.log("User ID from URL:", id);
-
-    // Check if fakeData.users exists and is an array
-    console.log("Fake Data Users:", fakeData.users);
-
-    // Find the user from fake data based on userId
-    const foundUser = fakeData.users.find((u) => u.id === id); 
-    console.log("Found User from Fake Data:", foundUser);
-
-    if (loggedInUser) {
-      if (loggedInUser.id === id) {
-        setUser(loggedInUser); // Set logged-in user if profile matches
-        setIsAuthenticated(true);
-      } else if (foundUser) {
-        setUser(foundUser); // Otherwise, set user from the fake data
-        setIsAuthenticated(false)
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get(`/api/users/${id}`);
+        if (response.data.success) {
+          setUserData(response.data.user);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        navigate("/");
+      } finally {
+        setLoading(false);
       }
-    } else if (foundUser) {
-      setUser(foundUser); // Fallback to the fake user if loggedInUser is not available
-    }
-  }, [loggedInUser, id]); // Dependency array to ensure it updates when loggedInUser or userId changes
+    };
 
-  // If user data isn't ready yet, show loading state
-  if (!user) {
-    return <div>Loading...</div>;
+    if (id) {
+      fetchUserData();
+    }
+  }, [id, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent"></div>
+      </div>
+    );
   }
 
-  const createdRecipes = fakeData.recipes.filter(
-    (recipe) => recipe.createdBy === user.id
-  );
-  const savedRecipes = fakeData.recipes.filter((recipe) =>
-    user.savedRecipes.includes(recipe.id)
-  );
+  if (!userData) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <h2 className="text-2xl font-bold text-gray-800">User not found</h2>
+        <Link to="/" className="mt-4 text-orange-600 hover:text-orange-700">
+          Return to Home
+        </Link>
+      </div>
+    );
+  }
 
-  const profileTabsData = [
-    {
-      label: <FaPizzaSlice className="text-xl" />,
-      value: "created",
-      recipes: createdRecipes,
-    },
-    ...(isAuthenticated
-      ? [
-          {
-            label: <FaBookmark className="text-xl" />,
-            value: "saved",
-            recipes: savedRecipes,
-          },
-        ]
-      : []),
-  ];
-  
+  const isOwnProfile = loggedInUser && loggedInUser.id === id;
+  const createdRecipes = userData.recipes || [];
+  const savedRecipes = userData.savedRecipes || [];
 
   return (
-    <div className="max-w-screen-lg mx-auto p-2 md:p-4">
-      <div className="bg-white shadow-md rounded-lg p-2 max-w-screen-lg mx-auto">
-        <div className="flex flex-col md:grid md:grid-cols-3 gap-6 items-center">
-          {/* User Profile Picture */}
-          <div className="flex items-center justify-center mb-4 md:mb-0">
-            <Avatar
-              src={user.profileImage || "/default-profile.jpg"} // Provide a fallback image
-              alt="Profile Picture"
-              size="xl"
-              className="w-24 h-24 md:w-40 md:h-40"
-            />
+    <div className="max-w-screen-xl mx-auto p-4 md:p-8">
+      {/* Profile Card */}
+      <div className="bg-white shadow-lg rounded-2xl p-6">
+        <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
+          {/* Profile Image */}
+          <div className="relative">
+            <div className="w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden shadow-lg">
+              <img
+                src={userData.profileImage || "/placeholder-avatar.png"}
+                alt={userData.name || "Profile"}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = "/placeholder-avatar.png";
+                }}
+              />
+            </div>
+            {isOwnProfile && (
+              <Link
+                to={`/edit-profile/${id}`}
+                className="absolute bottom-2 right-2 p-2 bg-orange-500 rounded-full text-white hover:bg-orange-600 transition-colors shadow-md"
+              >
+                <FaEdit className="w-5 h-5" />
+              </Link>
+            )}
           </div>
 
-          {/* User Info Section */}
-          <div className="flex flex-col items-center md:items-start md:col-span-2 text-center md:text-left">
-            <Typography
-              variant="h1"
-              className="text-2xl md:text-3xl font-semibold text-gray-800"
-            >
-              {user.name}
-            </Typography>
+          {/* User Info */}
+          <div className="flex-1 text-center md:text-left">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              {userData.name || "New User"}
+            </h1>
+            <p className="text-gray-600 mb-4">@{userData.username || "username"}</p>
+            <p className="text-gray-700 mb-6 max-w-2xl">{userData.bio || "No bio yet"}</p>
 
-            <Link to={`/edit-profile/${user.id}`}>Update Profile</Link>
-
-            <Typography
-              variant="h1"
-              className="text-lg md:text-xl font-semibold text-gray-600"
-            >
-              @{user.username}
-            </Typography>
-            <Typography variant="paragraph" className="mt-2 text-gray-600">
-              {user.bio || "This user hasn't written a bio yet."}
-            </Typography>
-
-            {/* Stats Section */}
-            <div className="flex justify-around mt-6 w-full md:w-auto">
-              <div className="flex flex-col items-center mx-4">
-                <Typography
-                  variant="h1"
-                  className="text-xl md:text-2xl font-semibold text-gray-800"
-                >
-                  {createdRecipes.length}
-                </Typography>
-                <Typography variant="paragraph" className="text-gray-500">
-                  Posts
-                </Typography>
+            {/* Stats */}
+            <div className="flex justify-center md:justify-start gap-8">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-gray-800">{createdRecipes.length}</p>
+                <p className="text-gray-600">Recipes</p>
               </div>
-              <div className="flex flex-col items-center mx-4">
-                <Typography
-                  variant="h1"
-                  className="text-xl md:text-2xl font-semibold text-gray-800"
-                >
-                  {user.followers.length}
-                </Typography>
-                <Typography variant="paragraph" className="text-gray-500">
-                  Followers
-                </Typography>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-gray-800">{userData.followers?.length || 0}</p>
+                <p className="text-gray-600">Followers</p>
               </div>
-              <div className="flex flex-col items-center mx-4">
-                <Typography
-                  variant="h1"
-                  className="text-xl md:text-2xl font-semibold text-gray-800"
-                >
-                  {user.following.length}
-                </Typography>
-                <Typography variant="paragraph" className="text-gray-500">
-                  Following
-                </Typography>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-gray-800">{userData.following?.length || 0}</p>
+                <p className="text-gray-600">Following</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs for Created and Saved Recipes */}
-      <div className="mt-6">
-        <Tabs value={activeTab}>
-          <TabsHeader
-            className="rounded-none border-b border-blue-gray-50 bg-transparent p-0 my-4"
-            indicatorProps={{
-              className:
-                "bg-transparent border-b-2 border-gray-900 shadow-none rounded-none",
-            }}
+      {/* Tabs */}
+      <div className="mt-8">
+        <div className="tabs tabs-boxed">
+          <button
+            className={`tab ${activeTab === 'created' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('created')}
           >
-            {profileTabsData.map(({ label, value }) => (
-              <Tab
-                key={value}
-                value={value}
-                onClick={() => setActiveTab(value)}
-                className={activeTab === value ? "text-gray-900" : ""}
-              >
-                {label}
-              </Tab>
-            ))}
-          </TabsHeader>
-          <TabsBody>
-            {profileTabsData.map(({ value, recipes }) => (
-              <TabPanel key={value} value={value}>
-                <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {recipes.map((recipe) => (
-                    <RecipeCard key={recipe.id} recipe={recipe} />
-                  ))}
-                </div>
-              </TabPanel>
-            ))}
-          </TabsBody>
-        </Tabs>
+            <FaPizzaSlice className="mr-2" /> Created
+          </button>
+          {isOwnProfile && (
+            <button
+              className={`tab ${activeTab === 'saved' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('saved')}
+            >
+              <FaBookmark className="mr-2" /> Saved
+            </button>
+          )}
+        </div>
+
+        {/* Recipe Grid */}
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {activeTab === 'created' 
+            ? createdRecipes.map((recipe) => (
+                <RecipeCard key={recipe._id} recipe={recipe} />
+              ))
+            : savedRecipes.map((recipe) => (
+                <RecipeCard key={recipe._id} recipe={recipe} />
+              ))}
+        </div>
       </div>
     </div>
   );
 };
 
 export default Profile;
+          

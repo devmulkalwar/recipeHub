@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Typography } from '@material-tailwind/react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import useAuth from '../contexts/useAuthContext';
 
 const OTPPage = () => {
+  const navigate = useNavigate();
+  const { verifyEmail, user } = useAuth();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(60); // Timer in seconds
   const [isTimerActive, setIsTimerActive] = useState(true);
+  const [loading, setLoading] = useState(false);
   const inputRefs = useRef([]);
 
   const handleChange = (index, value) => {
@@ -56,6 +62,29 @@ const OTPPage = () => {
     inputRefs.current[0].focus(); // Focus on the first input
   };
 
+  const handleVerifyOTP = async () => {
+    const otpCode = otp.join('');
+    if (otpCode.length !== 6) {
+      toast.error('Please enter a valid 6-digit code');
+      return;
+    }
+
+    try {
+      setLoading(true); // Add loading state
+      const success = await verifyEmail(otpCode);
+      if (success) {
+        toast.success('Email verified successfully!');
+        navigate(`/edit-profile/${user.id}`); // Redirect to profile completion
+      } else {
+        toast.error('Invalid verification code');
+      }
+    } catch (error) {
+      toast.error(error.message || 'Verification failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isTimerActive && timer > 0) {
       const interval = setInterval(() => {
@@ -74,48 +103,65 @@ const OTPPage = () => {
   }, []);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 ">
-      <div className="flex flex-col justify-center items-center bg-white shadow-md rounded-lg p-2 m-2 w-full max-w-md">
-        <Typography variant="h4" className="text-center text-gray-800 mb-6">
-          Enter OTP
-        </Typography>
-        <div className="w-full flex justify-center space-x-2">
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              ref={(el) => (inputRefs.current[index] = el)} // Assign ref to each input
-              id={`otp-input-${index}`}
-              type="text"
-              value={digit}
-              onChange={(e) => handleChange(index, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(index, e)}
-              onPaste={(e) => handlePaste(e, index)} // Handle paste event
-              maxLength={1}
-              className="w-10 h-10 md:w-12 md:h-12 text-center text-xl border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          ))}
-        </div>
-        <Button 
-          onClick={() => alert(`OTP entered: ${otp.join('')}`)} 
-          color="orange" 
-          className="w-full mt-6 py-2"
-        >
-          Verify OTP
-        </Button>
-        <div className=" text-center mt-4">
-          {isTimerActive ? (
-            <Typography variant="body1" className="text-gray-600">
-              Resend OTP in {timer} seconds
-            </Typography>
-          ) : (
-            <Button 
-              onClick={handleResendOTP} 
-              color="orange" 
-              className="w-full mt-2 py-2"
-            >
-              Resend OTP
-            </Button>
-          )}
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
+      <div className="card w-full max-w-md bg-white shadow-2xl">
+        <div className="card-body p-8">
+          {/* Logo/Brand */}
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-2xl">R</span>
+            </div>
+          </div>
+
+          {/* Title */}
+          <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
+            Verify Your Email
+          </h1>
+          <p className="text-center text-gray-600 mb-8">
+            Enter the verification code sent to your email
+          </p>
+
+          {/* OTP Input Section */}
+          <div className="flex justify-center gap-2 mb-8">
+            {otp.map((digit, index) => (
+              <input
+                key={index}
+                ref={(el) => (inputRefs.current[index] = el)}
+                type="text"
+                value={digit}
+                onChange={(e) => handleChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
+                onPaste={(e) => handlePaste(e, index)}
+                maxLength={1}
+                className="w-12 h-12 text-center text-xl font-semibold border rounded-xl focus:border-orange-400 focus:ring-2 focus:ring-orange-200 transition-all duration-200"
+              />
+            ))}
+          </div>
+
+          {/* Verify Button */}
+          <button
+            onClick={handleVerifyOTP}
+            className="btn w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 border-none text-white font-medium py-3 shadow-lg hover:shadow-xl transition-all duration-200 mb-6"
+            disabled={loading} // Disable button while loading
+          >
+            {loading ? 'Verifying...' : 'Verify Email'}
+          </button>
+
+          {/* Timer/Resend Section */}
+          <div className="text-center">
+            {isTimerActive ? (
+              <p className="text-gray-600">
+                Resend code in <span className="font-semibold text-orange-600">{timer}</span> seconds
+              </p>
+            ) : (
+              <button
+                onClick={handleResendOTP}
+                className="text-orange-600 hover:text-orange-700 font-medium hover:underline transition-colors duration-200"
+              >
+                Resend Verification Code
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

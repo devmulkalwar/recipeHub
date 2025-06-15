@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   HomeIcon,
   MagnifyingGlassIcon,
@@ -18,10 +18,13 @@ import {
 } from "@heroicons/react/24/outline";
 import useAuth from "../contexts/useAuthContext";
 import { AiOutlineLogin, AiOutlineLogout } from "react-icons/ai";
+import { ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 
 export function Sidebar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const isActive = (path) => location.pathname === path;
 
@@ -50,7 +53,25 @@ export function Sidebar() {
       icon: ChatOutline, 
       activeIcon: ChatBubbleLeftIcon 
     },
+    ...(user ? [
+      { 
+        path: `/profile/${user.id}`, 
+        label: "Profile", 
+        icon: UserOutline, 
+        activeIcon: UserCircleIcon 
+      }
+    ] : [])
   ];
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setShowLogoutConfirm(false);
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   return (
     <aside className="hidden md:flex flex-col w-20 lg:w-64 min-h-screen bg-white border-r border-orange-100 shadow-sm">
@@ -110,33 +131,19 @@ export function Sidebar() {
       {/* User Section */}
       <div className="p-3 lg:p-6 border-t border-orange-100">
         {user ? (
-          <Link 
-            to={`/profile/${user.id}`} 
-            className={`
-              flex items-center justify-center lg:justify-start p-3 lg:p-4 rounded-2xl
-              transition-all duration-200 group
-              ${isActive(`/profile/${user.id}`) 
-                ? 'bg-orange-50 text-orange-700' 
-                : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
-              }
-            `}
-          >
-            <div className="relative">
-              <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-200">
-                <UserCircleIcon className="h-5 w-5 text-white" />
-              </div>
-              {user.avatar && (
-                <img 
-                  src={user.avatar} 
-                  alt="Profile" 
-                  className="absolute inset-0 w-8 h-8 rounded-full object-cover"
-                />
-              )}
-            </div>
-            <span className="hidden lg:block ml-4 font-medium text-base">
-              Profile
-            </span>
-          </Link>
+          <>
+            
+            {/* Logout Button */}
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="w-full mt-2 flex items-center justify-center lg:justify-start p-3 lg:p-4 rounded-2xl text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200 group"
+            >
+              <ArrowRightOnRectangleIcon className="h-7 w-7 transition-transform duration-200 group-hover:scale-110" />
+              <span className="hidden lg:block ml-4 font-medium text-base">
+                Logout
+              </span>
+            </button>
+          </>
         ) : (
           <div className="space-y-2">
             <Link 
@@ -160,6 +167,34 @@ export function Sidebar() {
           </div>
         )}
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 relative z-[10000]">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              Logout Confirmation
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to log out?
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-700 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

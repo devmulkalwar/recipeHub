@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../contexts/useAuthContext';
 import { toast } from 'react-toastify';
 
-const EditProfile = () => {
+const CompleteProfile = () => {
   const navigate = useNavigate();
-  const { user, updateProfile } = useAuth();
+  const { user, completeProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
@@ -14,18 +14,6 @@ const EditProfile = () => {
     bio: '',
     profileImage: null
   });
-
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || '',
-        username: user.username || '',
-        bio: user.bio || '',
-        profileImage: null
-      });
-      setImagePreview(user.profileImage);
-    }
-  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,7 +26,7 @@ const EditProfile = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB
         toast.error('File size should be less than 10MB');
         return;
       }
@@ -73,16 +61,16 @@ const EditProfile = () => {
       formDataToSend.append('username', formData.username);
       formDataToSend.append('bio', formData.bio);
       if (formData.profileImage) {
-        formDataToSend.append('profileImage', formData.profileImage);
+        formDataToSend.append('profileImage', formData.profileImage, formData.profileImage.name);
       }
 
-      const success = await updateProfile(formDataToSend);
+      const success = await completeProfile(formDataToSend);
       if (success) {
-        toast.success('Profile updated successfully!');
+        toast.success('Profile completed successfully!');
         navigate(`/profile/${user.id}`);
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to update profile');
+      toast.error(error.message || 'Failed to complete profile');
     } finally {
       setLoading(false);
     }
@@ -93,11 +81,11 @@ const EditProfile = () => {
       <div className="card w-full max-w-md bg-white shadow-2xl">
         <div className="card-body p-8">
           <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
-            Edit Your Profile
+            Complete Your Profile
           </h1>
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Image Upload Section */}
+            {/* Profile Image Upload */}
             <div className="flex flex-col items-center space-y-4">
               <div className="relative">
                 <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100">
@@ -121,7 +109,7 @@ const EditProfile = () => {
               </div>
             </div>
 
-            {/* Form Fields */}
+            {/* Name Input */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text text-gray-700 font-medium">Full Name</span>
@@ -131,11 +119,13 @@ const EditProfile = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                placeholder="Enter your full name"
                 className="input input-bordered w-full focus:input-warning focus:border-orange-400"
                 required
               />
             </div>
 
+            {/* Username Input */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text text-gray-700 font-medium">Username</span>
@@ -145,11 +135,13 @@ const EditProfile = () => {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
+                placeholder="Choose a username"
                 className="input input-bordered w-full focus:input-warning focus:border-orange-400"
                 required
               />
             </div>
 
+            {/* Bio Input */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text text-gray-700 font-medium">Bio</span>
@@ -158,6 +150,7 @@ const EditProfile = () => {
                 name="bio"
                 value={formData.bio}
                 onChange={handleChange}
+                placeholder="Tell us about yourself"
                 className="textarea textarea-bordered w-full h-24 focus:textarea-warning focus:border-orange-400"
                 required
               />
@@ -168,7 +161,7 @@ const EditProfile = () => {
               disabled={loading}
               className={`btn w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 border-none text-white font-medium py-3 shadow-lg hover:shadow-xl transition-all duration-200 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {loading ? 'Saving...' : 'Save Changes'}
+              {loading ? 'Saving...' : 'Complete Profile'}
             </button>
           </form>
         </div>
@@ -177,4 +170,4 @@ const EditProfile = () => {
   );
 };
 
-export default EditProfile;
+export default CompleteProfile;

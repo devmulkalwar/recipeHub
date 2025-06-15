@@ -14,64 +14,99 @@ import dotenv from "dotenv";
 
 // Register new user
 export const signup = async (req, res) => {
-  const {email, password, confirmPassword } = req.body;
-
   try {
-    // Validate required fields
-    if (!email || !password || !confirmPassword ) {
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields are required" });
+    console.log('Received signup request:', req.body); // Debug log
+
+    const { email, password, confirmPassword } = req.body;
+
+    // Basic validation
+    if (!email || !password || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required"
+      });
     }
 
-    // Ensure passwords match
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email format",
+      });
+    }
+
+    // Updated password validation regex
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number",
+      });
+    }
+
+    // Check if passwords match
     if (password !== confirmPassword) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Passwords do not match" });
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
     }
 
-    // Check if the user already exists
-    const userAlreadyExists = await User.findOne({ email });
-    if (userAlreadyExists) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User already exists" });
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already registered",
+      });
     }
 
     // Hash password
-    const hashedPassword = await bcryptjs.hash(password, 10);
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash(password, salt);
 
-    // Generate verification token
+    // Generate verification token (6-digit code)
     const verificationToken = Math.floor(
       100000 + Math.random() * 900000
     ).toString();
+    const verificationTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     // Create new user
-    const user = new User({
+    const newUser = new User({
       email,
       password: hashedPassword,
       verificationToken,
-      verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000,
+      verificationTokenExpiresAt,
     });
 
-    await user.save();
+    await newUser.save();
 
-    // Generate JWT token and set cookie
-    const token = generateTokenSetCookie(res, user._id);
-    console.log(token);
+    // Generate JWT and set cookie
+    const token = generateTokenSetCookie(res, newUser._id);
 
     // Send verification email
-    await sendVerificationEmail(user.email, verificationToken);
+    await sendVerificationEmail(email, verificationToken);
 
-    res.status(201).json({
+    // Return success response
+    return res.status(201).json({
       success: true,
-      message: "Signup successful and verification email sent",
-      user: { ...user._doc, password: undefined, token },
+      message:
+        "Account created successfully. Please check your email for verification.",
+      user: {
+        id: newUser._id,
+        email: newUser.email,
+        isVerified: newUser.isVerified,
+      },
     });
   } catch (error) {
-    console.error("Error during signup:", error);
-    res.status(400).json({ success: false, message: "Error during signup" });
+    console.error("Signup error:", error); // Debug log
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error during signup",
+      error: error.message
+    });
   }
 };
 
@@ -79,6 +114,9 @@ export const signup = async (req, res) => {
 export const verifyEmail = async (req, res) => {
   const { code } = req.body;
   try {
+    // Add logging to debug
+    console.log('Attempting to verify email with code:', code);
+
     const user = await User.findOne({
       verificationToken: code,
       verificationTokenExpiresAt: { $gt: Date.now() },
@@ -87,70 +125,101 @@ export const verifyEmail = async (req, res) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired verification code",
+        message: "Invalid or expired verification code"
       });
     }
 
+    // Update user verification status
     user.isVerified = true;
     user.verificationToken = undefined;
     user.verificationTokenExpiresAt = undefined;
-    await user.save();
 
-    await sendWelcomeEmail(user.email, user.username);
+    await user.save();
+    console.log('User verified:', user);
+
+    // Generate new token after verification
+    const token = generateTokenSetCookie(res, user._id);
 
     res.status(200).json({
       success: true,
       message: "Email verified successfully",
       user: {
-        ...user._doc,
-        password: undefined,
-      },
+        id: user._id,
+        email: user.email,
+        isVerified: true,
+        token
+      }
     });
   } catch (error) {
-    console.log("Error in email verification", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Error in email verification" });
+    console.error("Verification error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error in email verification",
+      error: error.message 
+    });
   }
 };
 
 // Login user
 export const login = async (req, res) => {
-  const { email, password } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide email and password"
+      });
+    }
+
+    // Find user and include necessary fields
+    const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid credentials" });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials"
+      });
     }
 
+    // Check password
     const isPasswordValid = await bcryptjs.compare(password, user.password);
     if (!isPasswordValid) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid credentials" });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials"
+      });
     }
 
-    const token = generateTokenSetCookie(res, user._id);
-    console.log(token);
-
+    // Set last login
     user.lastLogin = new Date();
     await user.save();
 
+    // Generate token and set cookie
+    const token = generateTokenSetCookie(res, user._id);
+
+    // Return user data without sensitive information
     res.status(200).json({
       success: true,
       message: "Login successful",
       user: {
-        ...user._doc,
-        password: undefined,
-        token,
-      },
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        username: user.username,
+        profileImage: user.profileImage,
+        isVerified: user.isVerified,
+        isProfileComplete: user.isProfileComplete,
+        token
+      }
     });
+
   } catch (error) {
-    console.log("Error in login", error);
-    res.status(400).json({ success: false, message: "Error during login" });
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error during login"
+    });
   }
 };
 
@@ -162,38 +231,57 @@ export const logout = async (req, res) => {
 
 // Forgot password
 export const forgotPassword = async (req, res) => {
-  const { email } = req.body;
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid Email ID" });
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required"
+      });
     }
 
-    // Generate password reset token
-    const resetToken = crypto.randomBytes(20).toString("hex");
-    const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000; // 1 hour
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No user found with this email"
+      });
+    }
 
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = Date.now() + 3600000; // 1 hour
+
+    // Save token to user
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpiresAt = resetTokenExpiresAt;
+    user.resetPasswordExpiresAt = resetTokenExpiry;
     await user.save();
 
-    // Send password reset email
-    await sendPasswordResetEmail(
-      user.email,
-      `${process.env.CLIENT_URL}/reset-password/${resetToken}`
-    );
+    // Send reset email
+    try {
+      await sendPasswordResetEmail(
+        user.email,
+        `${process.env.CLIENT_URL}/reset-password/${resetToken}`
+      );
 
-    res.status(200).json({
-      success: true,
-      message: "Reset password email sent successfully",
-    });
+      res.status(200).json({
+        success: true,
+        message: "Password reset link sent to your email"
+      });
+    } catch (emailError) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpiresAt = undefined;
+      await user.save();
+
+      throw new Error('Failed to send reset email');
+    }
   } catch (error) {
-    console.log("Error in Forgot password", error);
-    res
-      .status(400)
-      .json({ success: false, message: "Error in Forgot password" });
+    console.error("Forgot password error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to process password reset"
+    });
   }
 };
 

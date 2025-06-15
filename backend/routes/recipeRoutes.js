@@ -15,12 +15,13 @@ import {
   unlikeRecipe,
 } from '../controllers/recipeController.js';
 import verifyToken from '../middlewares/authMiddleware.js';
+import checkProfileComplete from '../middlewares/profileMiddleware.js';
 import { upload } from '../middlewares/multerMiddleware.js';
 
 const router = express.Router();
 
 // Create a new recipe with image upload and token verification
-router.post('/create-recipe', verifyToken, upload.single('recipeImage'), createRecipe);
+router.post('/create-recipe', verifyToken, checkProfileComplete, upload.single('recipeImage'), createRecipe);
 
 // Get a recipe by its ID
 router.get('/:id', getRecipeById);

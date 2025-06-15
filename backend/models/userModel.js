@@ -73,20 +73,42 @@ const UserSchema = new Schema(
     isVerified: {
       type: Boolean,
       default: false,
+      required: true
     },
-    isProfileComplete: {
-      type: Boolean,
-      default: false,
+    verificationToken: {
+      type: String,
+      select: false // Don't include in default queries
+    },
+    verificationTokenExpiresAt: {
+      type: Date,
+      select: false // Don't include in default queries
     },
     resetPasswordToken: String,
     resetPasswordExpiresAt: Date,
-    verificationToken: String,
-    verificationTokenExpiresAt: Date,
+    isProfileComplete: {
+      type: Boolean,
+      default: false
+    },
   },
   {
-    timestamps: true, 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   }
 );
+
+// Remove the conflicting virtual since we're using a real field
+UserSchema.pre('save', function(next) {
+  // Update isProfileComplete based on required fields
+  this.isProfileComplete = !!(this.name && this.username && this.profileImage);
+  
+  // Handle verification fields
+  if (this.isVerified) {
+    this.verificationToken = undefined;
+    this.verificationTokenExpiresAt = undefined;
+  }
+  next();
+});
 
 const User = mongoose.model("User", UserSchema);
 export default User;

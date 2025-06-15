@@ -8,6 +8,7 @@ import userRoutes from './routes/userRoutes.js'; // Importing user routes
 import recipeRoutes from './routes/recipeRoutes.js'; // Importing recipe routes
 import commentRoutes from './routes/commentRoutes.js'; // Import comments
 import { connectDB } from './config/connectDB.js'; // Import database connection function
+import path from 'path';
 
 dotenv.config();
 const app = express();
@@ -17,12 +18,18 @@ connectDB();
 
 // Middleware
 app.use(cors({
-    origin: 'http://localhost:3000',
-    credentials: true 
+    origin: ['http://localhost:5173', 'http://localhost:3000'], // Add Vite's default port
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(cookieParser());
-app.use(express.json()); // For parsing application/json
+app.use(express.json({ limit: '50mb' })); // For parsing application/json
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Ensure uploads directory exists
+app.use('/uploads', express.static(path.join(process.cwd(), 'backend/public/uploads')));
 
 // Mounting routes
 app.use('/api/auth', authRoutes); // Mounting authentication routes
@@ -36,7 +43,7 @@ app.get('/', (req, res) => {
 });
 
 // Start the server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

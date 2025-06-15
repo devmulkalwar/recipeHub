@@ -200,67 +200,77 @@ export const getCreatedRecipes = async (req, res) => {
 
 // Create user profile
 export const createUserProfile = async (req, res) => {
-  const userId = req.userId;
-  const { name, username, bio } = req.body;
-  const profileImage = req.file;
-
+  let tempFilePath = null;
   try {
-    const user = await User.findById(userId);
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Profile image is required",
+      });
+    }
+
+    tempFilePath = req.file.path;
+    let uploadResult = null;
+    let attempts = 3;
+
+    while (attempts > 0) {
+      try {
+        uploadResult = await uploadOnCloudinary(tempFilePath);
+        if (uploadResult?.secure_url) break;
+      } catch (error) {
+        console.error(`Upload attempt ${4 - attempts} failed:`, error);
+        if (attempts === 1) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+      attempts--;
+    }
+
+    if (!uploadResult?.secure_url) {
+      throw new Error("Failed to upload image after multiple attempts");
+    }
+
+    // Update user profile
+    const user = await User.findById(req.userId);
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      throw new Error("User not found");
     }
 
-    if (user.name && user.username) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Profile already completed" });
-    }
-
-    let profileImageUrl = user.profileImage;
-
-    // Upload the new profile image to Cloudinary if provided
-    if (profileImage) {
-      const { path } = profileImage;
-      const cloudinaryResult = await uploadOnCloudinary(path);
-      profileImageUrl = cloudinaryResult.url;
-    }
-
-    // Update user profile with new data
-    user.name = name || user.name;
-    user.username = username || user.username;
-    user.profileImage = profileImageUrl;
-    user.bio = bio || user.bio;
+    user.name = req.body.name;
+    user.username = req.body.username;
+    user.bio = req.body.bio || "";
+    user.profileImage = uploadResult.secure_url;
     user.isProfileComplete = true;
 
-    const updatedUser = await user.save();
+    await user.save();
 
     res.status(200).json({
       success: true,
-      message: "Profile completed successfully",
-      user: { ...updatedUser._doc, password: undefined },
+      message: "Profile created successfully",
+      user: {
+        ...user.toObject(),
+        password: undefined,
+      },
     });
   } catch (error) {
-    // Clean up temporary image file if there was an error during the process
-    if (profileImage && profileImage.path) {
-      fs.unlinkSync(profileImage.path);
-    }
+    console.error("Profile creation error:", error);
     res.status(500).json({
       success: false,
-      message: "Error completing profile",
-      error: error.message,
+      message: error.message || "Failed to create profile",
     });
+  } finally {
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
+      fs.unlinkSync(tempFilePath);
+    }
   }
 };
 
 // Update user profile
 export const updateUserProfile = async (req, res) => {
-  let profileImage; 
+  let profileImage;
   try {
     const { name, username, bio } = req.body;
     const userId = req.userId;
-    profileImage = req.file; 
+    profileImage = req.file;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -326,17 +336,19 @@ export const deleteUser = async (req, res) => {
     // Find the user by ID
     const user = await User.findById(userId);
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
     // Verify the password
     const isPasswordValid = await bcryptjs.compare(password, user.password);
     if (!isPasswordValid) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid password" });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid password",
+      });
     }
 
     // Delete the user from the database
@@ -351,6 +363,7 @@ export const deleteUser = async (req, res) => {
       .status(200)
       .json({ success: true, message: "User account deleted successfully" });
   } catch (error) {
+    console.error("Delete user error:", error);
     res.status(500).json({
       success: false,
       message: "Error deleting user account",

@@ -24,6 +24,9 @@ import {
   ResetPassword,
   Signup, 
 } from "./pages/pages.js";
+import PrivateRoute from './components/PrivateRoute';
+import ProfileRequiredRoute from './components/ProfileRequiredRoute';
+import CompleteProfile from './pages/CompleteProfile';
 
 const router = createBrowserRouter([
   {
@@ -57,11 +60,11 @@ const router = createBrowserRouter([
       },
       {
         path: "profile/:id",
-        element: <Profile />,
+        element: <PrivateRoute><Profile /></PrivateRoute>,
       },
       {
         path: "edit-profile/:id",
-        element: <EditProfile />,
+        element: <PrivateRoute><EditProfile /></PrivateRoute>,
       },      
       {
         path: "recipes",
@@ -77,11 +80,15 @@ const router = createBrowserRouter([
       },
       {
         path: "create-recipe",
-        element: <CreateRecipe />,
+        element: (
+          <ProfileRequiredRoute>
+            <CreateRecipe />
+          </ProfileRequiredRoute>
+        ),
       },
       {
         path: "edit-recipe/:id",
-        element: <EditRecipe />,
+        element: <PrivateRoute><EditRecipe /></PrivateRoute>,
       },
       {
         path: "verify-otp",
@@ -94,6 +101,10 @@ const router = createBrowserRouter([
       {
         path: "reset-password/:token",
         element: <ResetPassword />,
+      },
+      {
+        path: "complete-profile",
+        element: <PrivateRoute><CompleteProfile /></PrivateRoute>,
       },
     ],
   },
