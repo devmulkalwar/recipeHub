@@ -9,6 +9,7 @@ import {
 import { BookmarkIcon as OutlineBookmarkIcon } from "@heroicons/react/24/outline";
 import { BookmarkIcon as FilledBookmarkIcon } from "@heroicons/react/24/solid";
 import { Link } from "react-router-dom";
+import { DEFAULT_RECIPE_IMAGE, DEFAULT_AVATAR_IMAGE } from '../constants/placeholderImages';
 
 const RecipeCard = ({ recipe }) => {
   const [isLiked, setIsLiked] = useState(false);
@@ -65,11 +66,11 @@ const RecipeCard = ({ recipe }) => {
         {/* Profile Section */}
         <div className="flex items-center gap-2">
           <img
-            src={createdBy?.profileImage || "/placeholder-avatar.png"}
+            src={createdBy?.profileImage || DEFAULT_AVATAR_IMAGE}
             alt="Profile"
             className="w-10 h-10 rounded-full object-cover"
             onError={(e) => {
-              e.target.src = "/placeholder-avatar.png";
+              e.target.src = DEFAULT_AVATAR_IMAGE;
             }}
           />
           <div className="flex flex-col">
@@ -100,11 +101,11 @@ const RecipeCard = ({ recipe }) => {
       <Link to={`/recipe/${_id}`}>
         <div className="relative pt-[75%] overflow-hidden">
           <img
-            src={recipeImage || "/placeholder-recipe.jpg"}
+            src={recipeImage || DEFAULT_RECIPE_IMAGE}
             alt={title}
             className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-300 hover:scale-110"
             onError={(e) => {
-              e.target.src = "/placeholder-recipe.jpg";
+              e.target.src = DEFAULT_RECIPE_IMAGE;
             }}
           />
         </div>
@@ -189,4 +190,3 @@ const RecipeCard = ({ recipe }) => {
 };
 
 export default RecipeCard;
-      

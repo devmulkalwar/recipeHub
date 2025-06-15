@@ -138,6 +138,21 @@ export const RecipeProvider = ({ children }) => {
     }
   };
 
+  const getRecipeById = async (id) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`/api/recipes/${id}`, {
+        withCredentials: true
+      });
+      return response.data;
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to fetch recipe');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     recipes,
     loading,
@@ -148,7 +163,8 @@ export const RecipeProvider = ({ children }) => {
     filterRecipes,
     likeRecipe,
     unlikeRecipe,
-    saveRecipe
+    saveRecipe,
+    getRecipeById,
   };
 
   return <RecipeContext.Provider value={value}>{children}</RecipeContext.Provider>;

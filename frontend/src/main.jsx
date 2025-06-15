@@ -75,7 +75,7 @@ const router = createBrowserRouter([
         element: <Chat />,
       },
       {
-        path: "recipe-details/:id",
+        path: "recipe/:id",
         element: <RecipeDetails />,
       },
       {
