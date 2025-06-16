@@ -20,6 +20,13 @@ import { recipeUpload } from '../middlewares/multerMiddleware.js';
 
 const router = express.Router();
 
+// User specific routes should come before generic routes
+router.get('/user/:userId', getRecipesByUser);
+router.get('/search', searchRecipes);
+router.get('/filter', filterRecipes);
+router.get('/get-recipes', getAllRecipes);
+router.get('/category/:category', getRecipesByCategory);
+
 // Create a new recipe with image upload and token verification
 router.post(
   '/create-recipe',
@@ -28,22 +35,6 @@ router.post(
   recipeUpload.single('recipeImage'),
   createRecipe
 );
-
-// Fix the route ordering and paths
-// Get all recipes - Move this route before the :id route to prevent conflicts
-router.get('/get-recipes', getAllRecipes);
-
-// Get filtered recipes
-router.get('/filter', filterRecipes);
-
-// Search recipes
-router.get('/search', searchRecipes);
-
-// Get recipes by category
-router.get('/category/:category', getRecipesByCategory);
-
-// Get recipes by user
-router.get('/user/:userId', getRecipesByUser);
 
 // These routes should come after the more specific routes
 router.get('/:id', getRecipeById);
@@ -57,4 +48,5 @@ router.put('/:id/save', verifyToken, saveRecipe);
 router.get('/sort', sortRecipes);
 
 export default router;
+
 

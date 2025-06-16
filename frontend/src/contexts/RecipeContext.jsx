@@ -153,6 +153,25 @@ export const RecipeProvider = ({ children }) => {
     }
   };
 
+  const getUserRecipes = async (userId) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`/api/recipes/user/${userId}`, {
+        withCredentials: true
+      });
+      
+      if (response.data.success) {
+        return response.data.recipes;
+      }
+      throw new Error(response.data.message || 'Failed to fetch user recipes');
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to fetch user recipes');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     recipes,
     loading,
@@ -165,6 +184,7 @@ export const RecipeProvider = ({ children }) => {
     unlikeRecipe,
     saveRecipe,
     getRecipeById,
+    getUserRecipes,
   };
 
   return <RecipeContext.Provider value={value}>{children}</RecipeContext.Provider>;

@@ -170,10 +170,22 @@ export const getAllRecipes = async (req, res) => {
 // Get recipes created by a specific user
 export const getRecipesByUser = async (req, res) => {
   try {
-    const recipes = await Recipe.find({ createdBy: req.params.userId }).populate('createdBy', 'username profileImage');
-    res.status(200).json(recipes);
+    const recipes = await Recipe.find({ createdBy: req.params.userId })
+      .populate('createdBy', 'username profileImage')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      recipes,
+      count: recipes.length
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching user recipes', error: error.message });
+    console.error('Error fetching user recipes:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching user recipes', 
+      error: error.message 
+    });
   }
 };
 

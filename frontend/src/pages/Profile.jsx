@@ -4,24 +4,37 @@ import { FaBookmark, FaPizzaSlice, FaEdit, FaHeart, FaComment, FaShare } from "r
 import { RecipeCard } from "../components/components.js";
 import useAuth from "../contexts/useAuthContext";
 import axios from "axios";
+import useRecipe from "../contexts/useRecipeContext";
 
 const Profile = () => {
   const { user: loggedInUser } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
+  const { getUserRecipes } = useRecipe();
   const [activeTab, setActiveTab] = useState("created");
   const [userData, setUserData] = useState(null);
+  const [userRecipes, setUserRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false); // New state for following
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(`/api/users/${id}`);
-        if (response.data.success) {
-          setUserData(response.data.user);
+        const [userData, recipesData] = await Promise.all([
+          axios.get(`/api/users/${id}`),
+          getUserRecipes(id)
+        ]);
+
+        if (userData.data.success) {
+          setUserData(userData.data.user);
+          // Check if the logged-in user is following this user
+          if (loggedInUser && userData.data.user.followers) {
+            setIsFollowing(userData.data.user.followers.includes(loggedInUser.id));
+          }
         }
+        setUserRecipes(recipesData || []);
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        console.error("Error fetching profile data:", error);
         navigate("/");
       } finally {
         setLoading(false);
@@ -31,7 +44,17 @@ const Profile = () => {
     if (id) {
       fetchUserData();
     }
-  }, [id, navigate]);
+  }, [id, navigate, loggedInUser, getUserRecipes]);
+
+  const formatNumber = (num) => {
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}m`;
+    }
+    if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}k`;
+    }
+    return num;
+  };
 
   if (loading) {
     return (
@@ -57,240 +80,174 @@ const Profile = () => {
   const savedRecipes = userData.savedRecipes || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto bg-white min-h-screen">
-        {/* Profile Header */}
-        <div className="px-4 py-8 md:px-8">
-          {/* Mobile Layout */}
-          <div className="block md:hidden">
-            {/* Profile Picture - Centered on Mobile */}
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-gray-100 shadow-lg">
-                  <img
-                    src={userData.profileImage || "/placeholder-avatar.png"}
-                    alt={userData.name || "Profile"}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src = "/placeholder-avatar.png";
-                    }}
-                  />
-                </div>
-                {isOwnProfile && (
-                  <Link
-                    to={`/edit-profile/${id}`}
-                    className="absolute -bottom-1 -right-1 p-2 bg-orange-500 rounded-full text-white hover:bg-orange-600 transition-all duration-200 shadow-lg hover:shadow-xl"
-                  >
-                    <FaEdit className="w-3 h-3" />
-                  </Link>
-                )}
-              </div>
-            </div>
-
-            {/* User Info - Centered on Mobile */}
-            <div className="text-center mb-6">
-              <h1 className="text-xl font-bold text-gray-900 mb-1">
-                {userData.name || "New User"}
-              </h1>
-              <p className="text-gray-600 text-sm mb-3">@{userData.username || "username"}</p>
-              <p className="text-gray-700 text-sm leading-relaxed px-4">
-                {userData.bio || "No bio yet"}
-              </p>
-            </div>
-
-            {/* Stats - Mobile */}
-            <div className="flex justify-center space-x-8 mb-6">
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-900">{createdRecipes.length}</div>
-                <div className="text-xs text-gray-600 uppercase tracking-wide">Recipes</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-900">{userData.followers?.length || 0}</div>
-                <div className="text-xs text-gray-600 uppercase tracking-wide">Followers</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-900">{userData.following?.length || 0}</div>
-                <div className="text-xs text-gray-600 uppercase tracking-wide">Following</div>
-              </div>
+    <div className="min-h-screen bg-white">
+      {/* Profile Header */}
+      <header className="max-w-5xl mx-auto p-4 md:py-8">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+          {/* Profile Image */}
+          <div className="shrink-0">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden ring-[3px] ring-gray-100">
+              <img
+                src={userData?.profileImage || "/placeholder-avatar.png"}
+                alt={userData?.username}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = "/placeholder-avatar.png";
+                }}
+              />
             </div>
           </div>
 
-          {/* Desktop Layout */}
-          <div className="hidden md:block">
-            <div className="flex items-start space-x-8">
-              {/* Profile Picture - Desktop */}
-              <div className="relative flex-shrink-0">
-                <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-gray-100 shadow-lg">
-                  <img
-                    src={userData.profileImage || "/placeholder-avatar.png"}
-                    alt={userData.name || "Profile"}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src = "/placeholder-avatar.png";
-                    }}
-                  />
-                </div>
-                {isOwnProfile && (
-                  <Link
-                    to={`/edit-profile/${id}`}
-                    className="absolute -bottom-2 -right-2 p-3 bg-orange-500 rounded-full text-white hover:bg-orange-600 transition-all duration-200 shadow-lg hover:shadow-xl"
-                  >
-                    <FaEdit className="w-4 h-4" />
-                  </Link>
-                )}
+          {/* Profile Info */}
+          <div className="flex-grow">
+            {/* Username and Edit Profile */}
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+              <h2 className="text-xl font-normal">{userData?.username}</h2>
+              {isOwnProfile && (
+                <Link
+                  to={`/edit-profile/${id}`}
+                  className="px-4 py-1.5 rounded-lg border border-gray-300 font-medium text-sm hover:bg-gray-50"
+                >
+                  Edit profile
+                </Link>
+              )}
+              {!isOwnProfile && (
+                <button
+                  className={`px-6 py-1.5 rounded-lg font-medium text-sm ${
+                    isFollowing
+                      ? "border border-gray-300 hover:bg-gray-50"
+                      : "bg-blue-500 text-white hover:bg-blue-600"
+                  }`}
+                  onClick={() => setIsFollowing(!isFollowing)}
+                >
+                  {isFollowing ? "Following" : "Follow"}
+                </button>
+              )}
+            </div>
+
+            {/* Stats */}
+            <div className="flex justify-center md:justify-start gap-8 my-4 text-sm">
+              <div className="text-center md:text-left">
+                <span className="font-semibold">{formatNumber(createdRecipes.length)}</span>
+                <span className="text-gray-500 ml-1">posts</span>
               </div>
-
-              {/* User Info - Desktop */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-4 mb-4">
-                  <h1 className="text-2xl font-light text-gray-900">
-                    {userData.name || "New User"}
-                  </h1>
-                  {isOwnProfile && (
-                    <Link
-                      to={`/edit-profile/${id}`}
-                      className="px-4 py-1.5 text-sm font-medium text-gray-900 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-                    >
-                      Edit Profile
-                    </Link>
-                  )}
-                </div>
-
-                {/* Stats - Desktop */}
-                <div className="flex space-x-8 mb-4">
-                  <div>
-                    <span className="font-semibold text-gray-900">{createdRecipes.length}</span>
-                    <span className="text-gray-600 ml-1">recipes</span>
-                  </div>
-                  <div>
-                    <span className="font-semibold text-gray-900">{userData.followers?.length || 0}</span>
-                    <span className="text-gray-600 ml-1">followers</span>
-                  </div>
-                  <div>
-                    <span className="font-semibold text-gray-900">{userData.following?.length || 0}</span>
-                    <span className="text-gray-600 ml-1">following</span>
-                  </div>
-                </div>
-
-                {/* Bio - Desktop */}
-                <div className="max-w-lg">
-                  <p className="text-sm text-gray-900 font-medium mb-1">{userData.name || "New User"}</p>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {userData.bio || "No bio yet"}
-                  </p>
-                </div>
+              <div className="text-center md:text-left">
+                <span className="font-semibold">{formatNumber(userData?.followers?.length || 0)}</span>
+                <span className="text-gray-500 ml-1">followers</span>
               </div>
+              <div className="text-center md:text-left">
+                <span className="font-semibold">{formatNumber(userData?.following?.length || 0)}</span>
+                <span className="text-gray-500 ml-1">following</span>
+              </div>
+            </div>
+
+            {/* Bio */}
+            <div className="text-center md:text-left space-y-1">
+              <div className="font-semibold">{userData?.name}</div>
+              <p className="text-sm whitespace-pre-line">{userData?.bio}</p>
             </div>
           </div>
         </div>
+      </header>
 
-        {/* Tab Navigation */}
-        <div className="border-t border-gray-200">
+      {/* Content Tabs */}
+      <div className="border-t border-gray-200">
+        <div className="max-w-5xl mx-auto">
           <div className="flex">
             <button
-              className={`flex-1 py-3 px-1 text-center border-t-2 transition-colors ${
-                activeTab === 'created'
-                  ? 'border-gray-900 text-gray-900'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              className={`flex-1 py-4 text-sm font-medium text-center border-t-2 transition-colors ${
+                activeTab === "created"
+                  ? "border-black text-black"
+                  : "border-transparent text-gray-500 hover:text-black"
               }`}
-              onClick={() => setActiveTab('created')}
+              onClick={() => setActiveTab("created")}
             >
-              <div className="flex items-center justify-center space-x-2">
-                <FaPizzaSlice className="w-3 h-3" />
-                <span className="text-xs font-semibold uppercase tracking-widest">Created</span>
-              </div>
+              <FaPizzaSlice className="inline-block mr-2 h-3 w-3" />
+              POSTS
             </button>
             {isOwnProfile && (
               <button
-                className={`flex-1 py-3 px-1 text-center border-t-2 transition-colors ${
-                  activeTab === 'saved'
-                    ? 'border-gray-900 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                className={`flex-1 py-4 text-sm font-medium text-center border-t-2 transition-colors ${
+                  activeTab === "saved"
+                    ? "border-black text-black"
+                    : "border-transparent text-gray-500 hover:text-black"
                 }`}
-                onClick={() => setActiveTab('saved')}
+                onClick={() => setActiveTab("saved")}
               >
-                <div className="flex items-center justify-center space-x-2">
-                  <FaBookmark className="w-3 h-3" />
-                  <span className="text-xs font-semibold uppercase tracking-widest">Saved</span>
-                </div>
+                <FaBookmark className="inline-block mr-2 h-3 w-3" />
+                SAVED
               </button>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Recipe Grid */}
-        <div className="p-4 md:p-8">
-          {(activeTab === 'created' ? createdRecipes : savedRecipes).length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                {activeTab === 'created' ? (
-                  <FaPizzaSlice className="w-6 h-6 text-gray-400" />
-                ) : (
-                  <FaBookmark className="w-6 h-6 text-gray-400" />
-                )}
+      {/* Recipe Grid */}
+      <div className="max-w-5xl mx-auto px-4">
+        {activeTab === "created" ? (
+          userRecipes.length === 0 ? (
+            <div className="py-20 text-center">
+              <div className="inline-block p-4 rounded-full bg-gray-100 mb-4">
+                <FaPizzaSlice className="h-8 w-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {activeTab === 'created' ? 'No recipes created yet' : 'No saved recipes'}
-              </h3>
-              <p className="text-gray-600 text-sm">
-                {activeTab === 'created' 
-                  ? 'Start sharing your favorite recipes!' 
-                  : 'Save recipes you love to see them here'}
-              </p>
+              <h3 className="text-2xl font-light text-gray-900 mb-2">No Posts Yet</h3>
+              <p className="text-gray-500">When you create recipes, they'll appear here.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-1 md:gap-4">
-              {(activeTab === 'created' ? createdRecipes : savedRecipes).map((recipe) => (
+            <div className="grid grid-cols-3 gap-1 md:gap-8 my-4">
+              {userRecipes.map((recipe) => (
                 <InstagramRecipeCard key={recipe._id} recipe={recipe} />
               ))}
             </div>
-          )}
-        </div>
+          )
+        ) : (
+          <div className="py-20 text-center">
+            <div className="inline-block p-4 rounded-full bg-gray-100 mb-4">
+              <FaBookmark className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-2xl font-light text-gray-900 mb-2">No Saved Recipes</h3>
+            <p className="text-gray-500">Save recipes to see them here.</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-// Instagram-style Recipe Card Component
+// Update InstagramRecipeCard component with hover effects
 const InstagramRecipeCard = ({ recipe }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div 
-      className="relative aspect-square bg-gray-100 rounded-md overflow-hidden group cursor-pointer"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <img
-        src={recipe.image || "/placeholder-food.jpg"}
-        alt={recipe.title}
-        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-        onError={(e) => {
-          e.target.src = "/placeholder-food.jpg";
-        }}
-      />
-      
-      {/* Hover Overlay */}
-      <div className={`absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center transition-opacity duration-200 ${
-        isHovered ? 'opacity-100' : 'opacity-0 md:opacity-0'
-      } md:group-hover:opacity-100`}>
-        <div className="flex space-x-6 text-white">
-          <div className="flex items-center space-x-1">
-            <FaHeart className="w-4 h-4" />
-            <span className="text-sm font-semibold">{recipe.likes?.length || 0}</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <FaComment className="w-4 h-4" />
-            <span className="text-sm font-semibold">{recipe.comments?.length || 0}</span>
+    <Link to={`/recipe/${recipe._id}`}>
+      <div
+        className="relative aspect-square bg-gray-100 group cursor-pointer"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <img
+          src={recipe.recipeImage || "/placeholder-recipe.jpg"}
+          alt={recipe.title}
+          className="w-full h-full object-cover"
+        />
+        
+        <div
+          className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200
+            ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <div className="flex gap-6 text-white">
+            <div className="flex items-center">
+              <FaHeart className="w-6 h-6" />
+              <span className="ml-2 font-semibold">{recipe.likes?.length || 0}</span>
+            </div>
+            <div className="flex items-center">
+              <FaComment className="w-6 h-6" />
+              <span className="ml-2 font-semibold">{recipe.comments?.length || 0}</span>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Recipe Title Overlay for Mobile */}
-      <div className="md:hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2">
-        <p className="text-white text-xs font-medium truncate">{recipe.title}</p>
-      </div>
-    </div>
+    </Link>
   );
 };
 
