@@ -9,30 +9,69 @@ import {
 import { BookmarkIcon as OutlineBookmarkIcon } from "@heroicons/react/24/outline";
 import { BookmarkIcon as FilledBookmarkIcon } from "@heroicons/react/24/solid";
 import { Link } from "react-router-dom";
-import { DEFAULT_RECIPE_IMAGE, DEFAULT_AVATAR_IMAGE } from '../constants/placeholderImages';
+import {
+  DEFAULT_RECIPE_IMAGE,
+  DEFAULT_AVATAR_IMAGE,
+} from "../constants/placeholderImages";
+import useAuth from "../contexts/useAuthContext";
+import useRecipe from "../contexts/useRecipeContext";
+import { toast } from "react-toastify";
+import { FaHeart, FaComment } from "react-icons/fa";
 
-const RecipeCard = ({ recipe }) => {
+const RecipeCard = ({ recipe, cardType = "normal", onUnsave }) => {
+  const { user } = useAuth();
+  const { likeRecipe, unlikeRecipe, saveRecipe, unsaveRecipe } = useRecipe();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
-  if (!recipe) {
-    return null;
-  }
+  useEffect(() => {
+    if (user && recipe) {
+      // Check if recipe.likes is an array before using includes
+      setIsLiked(Array.isArray(recipe.likes) && recipe.likes.includes(user.id));
+      setIsSaved(user.savedRecipes?.includes(recipe._id));
+    }
+  }, [user, recipe]);
 
-  const {
-    _id,
-    title,
-    description,
-    cookingTime,
-    difficulty,
-    likes = [],
-    comments = [],
-    recipeImage,
-    tags = [],
-    createdAt,
-    createdBy,
-  } = recipe;
+  if (!recipe) return null;
+
+  const handleLike = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please login to like recipes");
+      return;
+    }
+
+    try {
+      const response = await (isLiked ? unlikeRecipe(recipe._id) : likeRecipe(recipe._id));
+      setIsLiked(!isLiked);
+      toast.success(response.message);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please login to save recipes");
+      return;
+    }
+
+    try {
+      if (isSaved) {
+        await unsaveRecipe(recipe._id);
+        if (onUnsave) onUnsave(); // Call the onUnsave callback if provided
+      } else {
+        await saveRecipe(recipe._id);
+      }
+      setIsSaved(!isSaved);
+      toast.success(isSaved ? 'Recipe removed from saved' : 'Recipe saved successfully');
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -55,55 +94,84 @@ const RecipeCard = ({ recipe }) => {
     }
   };
 
-  useEffect(() => {
-    console.log(recipe);
-  }, []);
-
-  return (
-    <div className="bg-white shadow-md rounded-lg overflow-hidden transition-transform transform hover:scale-105 w-full max-w-sm mx-auto flex flex-col h-full">
-      {/* Recipe Header - Profile Picture, Username, and Created Date */}
-      <div className="flex justify-between items-center p-4 gap-3">
-        {/* Profile Section */}
-        <div className="flex items-center gap-2">
+  // Grid Card for Profile Page
+  if (cardType === "grid") {
+    return (
+      <Link to={`/recipe/${recipe._id}`}>
+        <div
+          className="relative aspect-square bg-gray-100 group cursor-pointer"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
           <img
-            src={createdBy?.profileImage || DEFAULT_AVATAR_IMAGE}
-            alt="Profile"
+            src={recipe.recipeImage || DEFAULT_RECIPE_IMAGE}
+            alt={recipe.title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = DEFAULT_RECIPE_IMAGE;
+            }}
+          />
+          
+          {/* Hover Overlay */}
+          <div
+            className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200
+              ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <div className="flex gap-6 text-white">
+              <div className="flex items-center">
+                <FaHeart className="w-6 h-6" />
+                <span className="ml-2 font-semibold">
+                  {recipe.likes?.length || 0}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <FaComment className="w-6 h-6" />
+                <span className="ml-2 font-semibold">
+                  {recipe.comments?.length || 0}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // Normal Card View (default)
+  return (
+    <div className="bg-white shadow-md rounded-lg overflow-hidden transition-transform hover:scale-105">
+      {/* Recipe Header - Profile Picture, Username, and Created Date */}
+      <div className="flex justify-between items-center p-4">
+        <Link
+          to={`/profile/${recipe.createdBy?._id}`}
+          className="flex items-center gap-2"
+        >
+          <img
+            src={recipe.createdBy?.profileImage || DEFAULT_AVATAR_IMAGE}
+            alt={recipe.createdBy?.username || "User"}
             className="w-10 h-10 rounded-full object-cover"
             onError={(e) => {
               e.target.src = DEFAULT_AVATAR_IMAGE;
             }}
           />
-          <div className="flex flex-col">
-            <Link to={`/profile/${createdBy?._id}`}>
-              <Typography
-                variant="h6"
-                className="text-gray-800 font-semibold hover:underline"
-              >
-                {createdBy?.username || "Anonymous"}
-              </Typography>
-            </Link>
-            <Typography variant="small" className="text-gray-500 text-xs">
-              {formatDate(createdAt)}
-            </Typography>
+          <div>
+            <h3 className="font-semibold text-gray-800">
+              {recipe.createdBy?.username}
+            </h3>
+            <p className="text-xs text-gray-500">
+              {new Date(recipe.createdAt).toLocaleDateString()}
+            </p>
           </div>
-        </div>
-
-        {/* Follow Button */}
-        <button
-          className="text-blue-500 text-sm font-semibold hover:underline"
-          onClick={() => setIsFollowing(!isFollowing)}
-        >
-          {isFollowing ? "Unfollow" : "Follow"}
-        </button>
+        </Link>
       </div>
 
       {/* Recipe Image */}
-      <Link to={`/recipe/${_id}`}>
+      <Link to={`/recipe/${recipe._id}`}>
         <div className="relative pt-[75%] overflow-hidden">
           <img
-            src={recipeImage || DEFAULT_RECIPE_IMAGE}
-            alt={title}
-            className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+            src={recipe.recipeImage || DEFAULT_RECIPE_IMAGE}
+            alt={recipe.title}
+            className="absolute top-0 left-0 w-full h-full object-cover"
             onError={(e) => {
               e.target.src = DEFAULT_RECIPE_IMAGE;
             }}
@@ -111,78 +179,55 @@ const RecipeCard = ({ recipe }) => {
         </div>
       </Link>
 
-      {/* Recipe Details */}
-      <div className="p-4 flex flex-col flex-grow">
-        <Link to={`/recipe/${_id}`}>
-          <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 hover:text-orange-600 transition-colors">
-            {title}
-          </h3>
-        </Link>
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{description}</p>
+      {/* Action Buttons */}
+      <div className="p-4 flex justify-between items-center">
+        <div className="flex gap-4">
+          <button onClick={handleLike} className="flex items-center gap-1">
+            {isLiked ? (
+              <AiFillLike className="w-6 h-6 text-red-500" />
+            ) : (
+              <AiOutlineLike className="w-6 h-6" />
+            )}
+            <span>{recipe.likes?.length || 0}</span>
+          </button>
+          <Link
+            to={`/recipe/${recipe._id}`}
+            className="flex items-center gap-1"
+          >
+            <AiOutlineComment className="w-6 h-6" />
+            <span>{recipe.comments?.length || 0}</span>
+          </Link>
+        </div>
+        <button onClick={handleSave}>
+          {isSaved ? (
+            <FilledBookmarkIcon className="w-6 h-6 text-orange-500" />
+          ) : (
+            <OutlineBookmarkIcon className="w-6 h-6" />
+          )}
+        </button>
+      </div>
 
-        {/* Cooking Time and Difficulty */}
-        <div className="flex justify-between items-center text-gray-600 mb-4">
-          <div className="flex items-center">
-            <AiFillClockCircle className="mr-1" />
-            <span>{cookingTime} min</span>
-          </div>
+      {/* Recipe Info */}
+      <div className="px-4 pb-4">
+        <Link to={`/recipe/${recipe._id}`}>
+          <h2 className="font-bold text-lg mb-2 hover:text-orange-500">
+            {recipe.title}
+          </h2>
+        </Link>
+        <p className="text-gray-600 text-sm mb-2 line-clamp-2">
+          {recipe.description}
+        </p>
+        <div className="flex items-center justify-between text-sm text-gray-500">
+          <span className="flex items-center gap-1">
+            <AiFillClockCircle /> {recipe.cookingTime} min
+          </span>
           <span
-            className={`px-2 py-1 rounded-md text-xs ${getDifficultyColor(
-              difficulty
+            className={`px-2 py-1 rounded text-xs ${getDifficultyColor(
+              recipe.difficulty
             )}`}
           >
-            {difficulty}
+            {recipe.difficulty}
           </span>
-        </div>
-
-        {/* Tags */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-4">
-            {tags.map((tag, index) => (
-              <span
-                key={index}
-                className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex justify-between items-center mt-auto">
-          <Button
-            variant="text"
-            className="flex items-center gap-2"
-            onClick={() => setIsLiked(!isLiked)}
-          >
-            {isLiked ? (
-              <AiFillLike className="text-orange-500" />
-            ) : (
-              <AiOutlineLike className="h-5 w-5 mr-1" />
-            )}
-            <span>{likes.length}</span>
-          </Button>
-
-          <Button
-            variant="text"
-            className="flex items-center gap-2"
-          >
-            <AiOutlineComment className="h-5 w-5 mr-1" />
-            <span>{comments.length}</span>
-          </Button>
-
-          <Button
-            variant="text"
-            className="flex items-center gap-2"
-            onClick={() => setIsSaved(!isSaved)}
-          >
-            {isSaved ? (
-              <FilledBookmarkIcon className="h-5 w-5 text-orange-500" />
-            ) : (
-              <OutlineBookmarkIcon className="h-5 w-5" />
-            )}
-          </Button>
         </div>
       </div>
     </div>

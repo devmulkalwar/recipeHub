@@ -13,6 +13,8 @@ import {
   sortRecipes,
   filterRecipes,
   unlikeRecipe,
+  getSavedRecipes,
+  unsaveRecipe,
 } from '../controllers/recipeController.js';
 import verifyToken from '../middlewares/authMiddleware.js';
 import checkProfileComplete from '../middlewares/profileMiddleware.js';
@@ -26,6 +28,7 @@ router.get('/search', searchRecipes);
 router.get('/filter', filterRecipes);
 router.get('/get-recipes', getAllRecipes);
 router.get('/category/:category', getRecipesByCategory);
+router.get('/saved-recipes/:userId', getSavedRecipes);
 
 // Create a new recipe with image upload and token verification
 router.post(
@@ -43,6 +46,7 @@ router.delete('/:id', verifyToken, deleteRecipe);
 router.put('/:id/like', verifyToken, likeRecipe);
 router.put('/:id/unlike', verifyToken, unlikeRecipe);
 router.put('/:id/save', verifyToken, saveRecipe);
+router.put('/:id/unsave', verifyToken, unsaveRecipe);
 
 // Sort recipes
 router.get('/sort', sortRecipes);

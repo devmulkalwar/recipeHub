@@ -110,6 +110,19 @@ export const RecipeProvider = ({ children }) => {
       const response = await axios.put(`/api/recipes/${recipeId}/like`, null, {
         withCredentials: true
       });
+
+      // Ensure likes is always an array
+      setRecipes(prev => prev.map(recipe => {
+        if (recipe._id === recipeId) {
+          const currentLikes = Array.isArray(recipe.likes) ? recipe.likes : [];
+          return {
+            ...recipe,
+            likes: [...currentLikes, response.data.userId]
+          };
+        }
+        return recipe;
+      }));
+
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to like recipe');
@@ -121,6 +134,18 @@ export const RecipeProvider = ({ children }) => {
       const response = await axios.put(`/api/recipes/${recipeId}/unlike`, null, {
         withCredentials: true
       });
+
+      // Update recipes state if needed
+      setRecipes(prev => prev.map(recipe => {
+        if (recipe._id === recipeId) {
+          return {
+            ...recipe,
+            likes: recipe.likes.filter(id => id !== response.data.userId)
+          };
+        }
+        return recipe;
+      }));
+
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to unlike recipe');
@@ -132,9 +157,22 @@ export const RecipeProvider = ({ children }) => {
       const response = await axios.put(`/api/recipes/${recipeId}/save`, null, {
         withCredentials: true
       });
+      // Fetch updated saved recipes to maintain state
+      const updatedUser = await axios.get(`/api/users/saved-recipes`);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to save recipe');
+    }
+  };
+
+  const unsaveRecipe = async (recipeId) => {
+    try {
+      const response = await axios.put(`/api/recipes/${recipeId}/unsave`, null, {
+        withCredentials: true
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to unsave recipe');
     }
   };
 
@@ -172,6 +210,25 @@ export const RecipeProvider = ({ children }) => {
     }
   };
 
+  const getSavedRecipes = async (userId) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`/api/recipes/saved-recipes/${userId}`, {
+        withCredentials: true
+      });
+      
+      if (response.data.success) {
+        return response.data.savedRecipes;
+      }
+      throw new Error(response.data.message || 'Failed to fetch saved recipes');
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to fetch saved recipes');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     recipes,
     loading,
@@ -183,8 +240,10 @@ export const RecipeProvider = ({ children }) => {
     likeRecipe,
     unlikeRecipe,
     saveRecipe,
+    unsaveRecipe,
     getRecipeById,
     getUserRecipes,
+    getSavedRecipes,
   };
 
   return <RecipeContext.Provider value={value}>{children}</RecipeContext.Provider>;

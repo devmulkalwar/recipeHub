@@ -69,4 +69,12 @@ recipeSchema.methods.populateCreatedByDetails = function () {
   return this.populate('createdBy', 'username profileImage');
 };
 
+// Add a pre-save middleware to populate createdBy details
+recipeSchema.pre('save', async function(next) {
+  if (this.isModified('createdBy') || this.isNew) {
+    await this.populate('createdBy', 'username profileImage');
+  }
+  next();
+});
+
 export default mongoose.model('Recipe', recipeSchema);

@@ -408,4 +408,68 @@ export const filterRecipes = async (req, res) => {
   }
 };
 
+export const getSavedRecipes = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+      .populate({
+        path: 'savedRecipes',
+        populate: {
+          path: 'createdBy',
+          select: 'username profileImage'
+        }
+      });
+
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      savedRecipes: user.savedRecipes || []
+    });
+  } catch (error) {
+    console.error('Error fetching saved recipes:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching saved recipes', 
+      error: error.message 
+    });
+  }
+};
+
+// Unsave a recipe
+export const unsaveRecipe = async (req, res) => {
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+    if (!recipe) {
+      return res.status(404).json({ message: 'Recipe not found' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Remove the recipe from savedRecipes
+    user.savedRecipes = user.savedRecipes.filter(
+      savedId => savedId.toString() !== recipe._id.toString()
+    );
+    await user.save();
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Recipe removed from saved' 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error unsaving recipe', 
+      error: error.message 
+    });
+  }
+};
+
 

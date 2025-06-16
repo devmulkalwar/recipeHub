@@ -21,7 +21,7 @@ import { AiOutlineLogin, AiOutlineLogout } from "react-icons/ai";
 import { ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 
 export function Sidebar() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -54,13 +54,13 @@ export function Sidebar() {
       activeIcon: ChatBubbleLeftIcon 
     },
     ...(user ? [
-      { 
-        path: `/profile/${user.id}`, 
-        label: "Profile", 
-        icon: UserOutline, 
-        activeIcon: UserCircleIcon 
-      }
-    ] : [])
+      {
+        path: `/profile/${user?.id}`,
+        label: "Profile",
+        icon: UserOutline,
+        activeIcon: UserCircleIcon,
+      },
+    ] : []),
   ];
 
   const handleLogout = async () => {

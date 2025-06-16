@@ -5,24 +5,28 @@ import { RecipeCard } from "../components/components.js";
 import useAuth from "../contexts/useAuthContext";
 import axios from "axios";
 import useRecipe from "../contexts/useRecipeContext";
+import { toast } from 'react-toastify';
 
 const Profile = () => {
   const { user: loggedInUser } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getUserRecipes } = useRecipe();
+  const { getUserRecipes, getSavedRecipes, unsaveRecipe } = useRecipe();
   const [activeTab, setActiveTab] = useState("created");
   const [userData, setUserData] = useState(null);
   const [userRecipes, setUserRecipes] = useState([]);
+  const [savedRecipes, setSavedRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false); // New state for following
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const [userData, recipesData] = await Promise.all([
+        console.log('Fetching data for user ID:', id);
+        const [userData, recipesData, savedRecipesData] = await Promise.all([
           axios.get(`/api/users/${id}`),
-          getUserRecipes(id)
+          getUserRecipes(id),
+          getSavedRecipes(id)
         ]);
 
         if (userData.data.success) {
@@ -33,9 +37,10 @@ const Profile = () => {
           }
         }
         setUserRecipes(recipesData || []);
+        setSavedRecipes(savedRecipesData || []);
       } catch (error) {
         console.error("Error fetching profile data:", error);
-        navigate("/");
+        toast.error('Failed to load profile data');
       } finally {
         setLoading(false);
       }
@@ -44,7 +49,7 @@ const Profile = () => {
     if (id) {
       fetchUserData();
     }
-  }, [id, navigate, loggedInUser, getUserRecipes]);
+  }, [id, navigate, loggedInUser, getUserRecipes, getSavedRecipes]);
 
   const formatNumber = (num) => {
     if (num >= 1000000) {
@@ -77,7 +82,6 @@ const Profile = () => {
 
   const isOwnProfile = loggedInUser && loggedInUser.id === id;
   const createdRecipes = userData.recipes || [];
-  const savedRecipes = userData.savedRecipes || [];
 
   return (
     <div className="min-h-screen bg-white">
@@ -186,69 +190,55 @@ const Profile = () => {
       <div className="max-w-5xl mx-auto px-4">
         {activeTab === "created" ? (
           userRecipes.length === 0 ? (
-            <div className="py-20 text-center">
-              <div className="inline-block p-4 rounded-full bg-gray-100 mb-4">
-                <FaPizzaSlice className="h-8 w-8 text-gray-400" />
-              </div>
-              <h3 className="text-2xl font-light text-gray-900 mb-2">No Posts Yet</h3>
-              <p className="text-gray-500">When you create recipes, they'll appear here.</p>
-            </div>
+            <EmptyState
+              icon={<FaPizzaSlice className="h-8 w-8 text-gray-400" />}
+              title="No Posts Yet"
+              message="When you create recipes, they'll appear here."
+            />
           ) : (
-            <div className="grid grid-cols-3 gap-1 md:gap-8 my-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-4">
               {userRecipes.map((recipe) => (
-                <InstagramRecipeCard key={recipe._id} recipe={recipe} />
+                <RecipeCard
+                  key={recipe._id}
+                  recipe={recipe}
+                  cardType={isOwnProfile ? "normal" : "grid"}
+                />
               ))}
             </div>
           )
         ) : (
-          <div className="py-20 text-center">
-            <div className="inline-block p-4 rounded-full bg-gray-100 mb-4">
-              <FaBookmark className="h-8 w-8 text-gray-400" />
+          savedRecipes.length === 0 ? (
+            <EmptyState
+              icon={<FaBookmark className="h-8 w-8 text-gray-400" />}
+              title="No Saved Recipes"
+              message="Save recipes to see them here."
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-4">
+              {savedRecipes.map((recipe) => (
+                <RecipeCard
+                  key={recipe._id}
+                  recipe={recipe}
+                  cardType="normal"
+                  onUnsave={() => handleUnsaveRecipe(recipe._id)}
+                />
+              ))}
             </div>
-            <h3 className="text-2xl font-light text-gray-900 mb-2">No Saved Recipes</h3>
-            <p className="text-gray-500">Save recipes to see them here.</p>
-          </div>
+          )
         )}
       </div>
     </div>
   );
 };
 
-// Update InstagramRecipeCard component with hover effects
-const InstagramRecipeCard = ({ recipe }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <Link to={`/recipe/${recipe._id}`}>
-      <div
-        className="relative aspect-square bg-gray-100 group cursor-pointer"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <img
-          src={recipe.recipeImage || "/placeholder-recipe.jpg"}
-          alt={recipe.title}
-          className="w-full h-full object-cover"
-        />
-        
-        <div
-          className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200
-            ${isHovered ? 'opacity-100' : 'opacity-0'}`}
-        >
-          <div className="flex gap-6 text-white">
-            <div className="flex items-center">
-              <FaHeart className="w-6 h-6" />
-              <span className="ml-2 font-semibold">{recipe.likes?.length || 0}</span>
-            </div>
-            <div className="flex items-center">
-              <FaComment className="w-6 h-6" />
-              <span className="ml-2 font-semibold">{recipe.comments?.length || 0}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-};
+const EmptyState = ({ icon, title, message }) => (
+  <div className="py-20 text-center">
+    <div className="inline-block p-4 rounded-full bg-gray-100 mb-4">
+      {icon}
+    </div>
+    <h3 className="text-2xl font-light text-gray-900 mb-2">{title}</h3>
+    <p className="text-gray-500">{message}</p>
+  </div>
+);
 
 export default Profile;
