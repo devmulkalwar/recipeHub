@@ -12,6 +12,43 @@ export const RecipeProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const categories = [
+    {
+      name: "Appetizer",
+      image: "/images/categories/appetizer.jpg",
+      count: 0
+    },
+    {
+      name: "Main Course",
+      image: "/images/categories/main-course.jpg",
+      count: 0
+    },
+    {
+      name: "Dessert",
+      image: "/images/categories/dessert.jpg",
+      count: 0
+    },
+    {
+      name: "Salad",
+      image: "/images/categories/salad.jpg",
+      count: 0
+    },
+    {
+      name: "Soup",
+      image: "/images/categories/soup.jpg",
+      count: 0
+    },
+    {
+      name: "Beverage",
+      image: "/images/categories/beverage.jpg",
+      count: 0
+    }
+  ];
+
+  const getCategories = () => {
+    return categories;
+  };
+
   const createRecipe = async (recipeData) => {
     try {
       setLoading(true);
@@ -57,15 +94,18 @@ export const RecipeProvider = ({ children }) => {
   const getAllRecipes = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/recipes/get-recipes', {
-        withCredentials: true,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-
+      const response = await axios.get('/api/recipes/get-recipes');
       if (response.data.success) {
+        // Update category counts
+        const recipeCounts = response.data.recipes.reduce((acc, recipe) => {
+          acc[recipe.category] = (acc[recipe.category] || 0) + 1;
+          return acc;
+        }, {});
+
+        categories.forEach(category => {
+          category.count = recipeCounts[category.name] || 0;
+        });
+
         return response.data.recipes;
       }
       throw new Error(response.data.message || 'Failed to fetch recipes');
@@ -244,6 +284,8 @@ export const RecipeProvider = ({ children }) => {
     getRecipeById,
     getUserRecipes,
     getSavedRecipes,
+    getCategories,
+    categories
   };
 
   return <RecipeContext.Provider value={value}>{children}</RecipeContext.Provider>;

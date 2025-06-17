@@ -192,10 +192,23 @@ export const getRecipesByUser = async (req, res) => {
 // Get recipes by category
 export const getRecipesByCategory = async (req, res) => {
   try {
-    const recipes = await Recipe.find({ category: req.params.category }).populate('createdBy', 'username profileImage');
-    res.status(200).json(recipes);
+    const { category } = req.params;
+    const recipes = await Recipe.find({ category })
+      .populate('createdBy', 'username profileImage')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      recipes,
+      count: recipes.length
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching recipes by category', error: error.message });
+    console.error('Error fetching recipes by category:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching recipes by category',
+      error: error.message
+    });
   }
 };
 
