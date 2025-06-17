@@ -1,6 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import useRecipe from "../contexts/useRecipeContext";
+import { toast } from "react-toastify";
 
-const CreateRecipe = () => {
+const EditRecipe = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { getRecipeById, updateRecipe, deleteRecipe, loading } = useRecipe();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [recipeData, setRecipeData] = useState({
     title: "",
     description: "",
@@ -25,6 +32,20 @@ const CreateRecipe = () => {
     "Snack",
   ];
   const difficulties = ["Easy", "Medium", "Hard"];
+
+  useEffect(() => {
+    const fetchRecipe = async () => {
+      try {
+        const recipe = await getRecipeById(id);
+        setRecipeData(recipe);
+        setImagePreview(recipe.image);
+      } catch (error) {
+        toast.error(error.message || "Failed to fetch recipe");
+      }
+    };
+
+    fetchRecipe();
+  }, [id, getRecipeById]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -72,17 +93,43 @@ const CreateRecipe = () => {
     setRecipeData({ ...recipeData, tags: newTags });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Recipe Created:", recipeData);
+    try {
+      await updateRecipe(id, recipeData);
+      toast.success("Recipe updated successfully");
+      navigate("/recipes");
+    } catch (error) {
+      toast.error(error.message || "Failed to update recipe");
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteRecipe(id);
+      toast.success("Recipe deleted successfully");
+      navigate("/recipes");
+    } catch (error) {
+      toast.error(error.message || "Failed to delete recipe");
+    }
   };
 
   return (
-    
-      <div className="flex-grow m-auto in-h-screen flex items-center justify-center flex-col w-full max-w-md bg-white shadow-lg rounded-lg p-2">
-        <h2 className="text-center text-orange-600 font-bold text-xl sm:text-2xl mb-4">
-          Create a New Recipe
-        </h2>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header with Delete Button */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+            Edit Recipe
+          </h1>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+          >
+            Delete Recipe
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {imagePreview && (
             <img
@@ -274,8 +321,38 @@ const CreateRecipe = () => {
             Submit Recipe
           </button>
         </form>
-   </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                Delete Recipe?
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this recipe? This action cannot be
+                undone.
+              </p>
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
-export default CreateRecipe;
+export default EditRecipe;

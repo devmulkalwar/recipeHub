@@ -279,15 +279,45 @@ export const updateRecipe = async (req, res) => {
 // Delete a recipe by ID
 export const deleteRecipe = async (req, res) => {
   try {
-    const recipe = await Recipe.findByIdAndDelete(req.params.id);
-
+    const recipe = await Recipe.findById(req.params.id);
+    
     if (!recipe) {
-      return res.status(404).json({ message: 'Recipe not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Recipe not found' 
+      });
     }
 
-    res.status(200).json({ message: 'Recipe deleted successfully' });
+    // Check if user is authorized to delete
+    if (recipe.createdBy.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to delete this recipe'
+      });
+    }
+
+    // Delete recipe image from cloudinary if exists
+    if (recipe.recipeImage) {
+      try {
+        await deleteImageFromCloudinary(recipe.recipeImage);
+      } catch (cloudinaryError) {
+        console.error('Error deleting image from cloudinary:', cloudinaryError);
+      }
+    }
+
+    await Recipe.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Recipe deleted successfully' 
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting recipe', error: error.message });
+    console.error('Delete recipe error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error deleting recipe', 
+      error: error.message 
+    });
   }
 };
 

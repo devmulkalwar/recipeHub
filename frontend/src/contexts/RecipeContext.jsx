@@ -151,17 +151,19 @@ export const RecipeProvider = ({ children }) => {
         withCredentials: true
       });
 
-      // Ensure likes is always an array
-      setRecipes(prev => prev.map(recipe => {
-        if (recipe._id === recipeId) {
-          const currentLikes = Array.isArray(recipe.likes) ? recipe.likes : [];
-          return {
-            ...recipe,
-            likes: [...currentLikes, response.data.userId]
-          };
-        }
-        return recipe;
-      }));
+      if (response.data.success) {
+        // Update recipes state
+        setRecipes(prev => prev.map(recipe => {
+          if (recipe._id === recipeId) {
+            const newLikes = Array.isArray(recipe.likes) ? [...recipe.likes] : [];
+            if (!newLikes.includes(response.data.userId)) {
+              newLikes.push(response.data.userId);
+            }
+            return { ...recipe, likes: newLikes };
+          }
+          return recipe;
+        }));
+      }
 
       return response.data;
     } catch (error) {
@@ -175,16 +177,18 @@ export const RecipeProvider = ({ children }) => {
         withCredentials: true
       });
 
-      // Update recipes state if needed
-      setRecipes(prev => prev.map(recipe => {
-        if (recipe._id === recipeId) {
-          return {
-            ...recipe,
-            likes: recipe.likes.filter(id => id !== response.data.userId)
-          };
-        }
-        return recipe;
-      }));
+      if (response.data.success) {
+        // Update recipes state
+        setRecipes(prev => prev.map(recipe => {
+          if (recipe._id === recipeId) {
+            return {
+              ...recipe,
+              likes: recipe.likes.filter(id => id !== response.data.userId)
+            };
+          }
+          return recipe;
+        }));
+      }
 
       return response.data;
     } catch (error) {
@@ -197,8 +201,6 @@ export const RecipeProvider = ({ children }) => {
       const response = await axios.put(`/api/recipes/${recipeId}/save`, null, {
         withCredentials: true
       });
-      // Fetch updated saved recipes to maintain state
-      const updatedUser = await axios.get(`/api/users/saved-recipes`);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to save recipe');
@@ -269,6 +271,24 @@ export const RecipeProvider = ({ children }) => {
     }
   };
 
+  const deleteRecipe = async (id) => {
+    try {
+      const response = await axios.delete(`/api/recipes/${id}`, {
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        // Update local state
+        setRecipes(prev => prev.filter(recipe => recipe._id !== id));
+        return { success: true, message: 'Recipe deleted successfully' };
+      }
+      throw new Error(response.data.message || 'Failed to delete recipe');
+    } catch (error) {
+      console.error('Delete recipe error:', error);
+      throw new Error(error.response?.data?.message || 'Failed to delete recipe');
+    }
+  };
+
   const value = {
     recipes,
     loading,
@@ -285,7 +305,8 @@ export const RecipeProvider = ({ children }) => {
     getUserRecipes,
     getSavedRecipes,
     getCategories,
-    categories
+    categories,
+    deleteRecipe,
   };
 
   return <RecipeContext.Provider value={value}>{children}</RecipeContext.Provider>;

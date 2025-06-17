@@ -5,6 +5,8 @@ import {
   AiFillLike,
   AiOutlineComment,
   AiFillClockCircle,
+  AiOutlineDelete,
+  AiOutlineEdit,
 } from "react-icons/ai";
 import { BookmarkIcon as OutlineBookmarkIcon } from "@heroicons/react/24/outline";
 import { BookmarkIcon as FilledBookmarkIcon } from "@heroicons/react/24/solid";
@@ -18,59 +20,67 @@ import useRecipe from "../contexts/useRecipeContext";
 import { toast } from "react-toastify";
 import { FaHeart, FaComment } from "react-icons/fa";
 
-const RecipeCard = ({ recipe, cardType = "normal", onUnsave }) => {
+const RecipeCard = ({ recipe, cardType = "normal", onDelete }) => {
   const { user } = useAuth();
-  const { likeRecipe, unlikeRecipe, saveRecipe, unsaveRecipe } = useRecipe();
+  const { likeRecipe, unlikeRecipe, saveRecipe, unsaveRecipe, deleteRecipe } =
+    useRecipe();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [likesCount, setLikesCount] = useState(recipe?.likes?.length || 0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Add isOwner check
+  const isOwner = user && recipe?.createdBy?._id === user.id;
 
   useEffect(() => {
     if (user && recipe) {
-      // Check if recipe.likes is an array before using includes
-      setIsLiked(Array.isArray(recipe.likes) && recipe.likes.includes(user.id));
+      setIsLiked(recipe.likes?.includes(user.id));
       setIsSaved(user.savedRecipes?.includes(recipe._id));
+      setLikesCount(recipe.likes?.length || 0);
     }
   }, [user, recipe]);
 
-  if (!recipe) return null;
-
-  const handleLike = async (e) => {
+  const handleInteraction = async (action, e) => {
     e.preventDefault();
     if (!user) {
-      toast.error("Please login to like recipes");
+      toast.error("Please login to interact with recipes");
       return;
     }
 
     try {
-      const response = await (isLiked ? unlikeRecipe(recipe._id) : likeRecipe(recipe._id));
-      setIsLiked(!isLiked);
+      let response;
+      switch (action) {
+        case "like":
+          response = await (isLiked ? unlikeRecipe : likeRecipe)(recipe._id);
+          setIsLiked(!isLiked);
+          setLikesCount((prev) => (isLiked ? prev - 1 : prev + 1));
+          break;
+        case "save":
+          response = await (isSaved ? unsaveRecipe : saveRecipe)(recipe._id);
+          setIsSaved(!isSaved);
+          if (onUnsave && isSaved) {
+            onUnsave(recipe._id);
+          }
+          break;
+      }
       toast.success(response.message);
     } catch (error) {
       toast.error(error.message);
     }
   };
 
-  const handleSave = async (e) => {
+  const handleDelete = async (e) => {
     e.preventDefault();
-    if (!user) {
-      toast.error("Please login to save recipes");
-      return;
-    }
-
+    e.stopPropagation();
     try {
-      if (isSaved) {
-        await unsaveRecipe(recipe._id);
-        if (onUnsave) onUnsave(); // Call the onUnsave callback if provided
-      } else {
-        await saveRecipe(recipe._id);
-      }
-      setIsSaved(!isSaved);
-      toast.success(isSaved ? 'Recipe removed from saved' : 'Recipe saved successfully');
+      await deleteRecipe(recipe._id);
+      toast.success("Recipe deleted successfully");
+      if (onDelete) onDelete(recipe._id);
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || "Failed to delete recipe");
     }
+    setShowDeleteModal(false);
   };
 
   const formatDate = (dateString) => {
@@ -111,11 +121,11 @@ const RecipeCard = ({ recipe, cardType = "normal", onUnsave }) => {
               e.target.src = DEFAULT_RECIPE_IMAGE;
             }}
           />
-          
+
           {/* Hover Overlay */}
           <div
             className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200
-              ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+              ${isHovered ? "opacity-100" : "opacity-0"}`}
           >
             <div className="flex gap-6 text-white">
               <div className="flex items-center">
@@ -182,13 +192,16 @@ const RecipeCard = ({ recipe, cardType = "normal", onUnsave }) => {
       {/* Action Buttons */}
       <div className="p-4 flex justify-between items-center">
         <div className="flex gap-4">
-          <button onClick={handleLike} className="flex items-center gap-1">
+          <button
+            onClick={(e) => handleInteraction("like", e)}
+            className="flex items-center gap-1"
+          >
             {isLiked ? (
               <AiFillLike className="w-6 h-6 text-red-500" />
             ) : (
               <AiOutlineLike className="w-6 h-6" />
             )}
-            <span>{recipe.likes?.length || 0}</span>
+            <span>{likesCount}</span>
           </button>
           <Link
             to={`/recipe/${recipe._id}`}
@@ -198,7 +211,7 @@ const RecipeCard = ({ recipe, cardType = "normal", onUnsave }) => {
             <span>{recipe.comments?.length || 0}</span>
           </Link>
         </div>
-        <button onClick={handleSave}>
+        <button onClick={(e) => handleInteraction("save", e)}>
           {isSaved ? (
             <FilledBookmarkIcon className="w-6 h-6 text-orange-500" />
           ) : (
@@ -230,6 +243,55 @@ const RecipeCard = ({ recipe, cardType = "normal", onUnsave }) => {
           </span>
         </div>
       </div>
+
+      {/* Update delete button to show modal */}
+      {isOwner && (
+        <div className="absolute top-2 right-2 z-10 flex gap-2">
+          <Link
+            to={`/edit-recipe/${recipe._id}`}
+            className="p-2 bg-white rounded-full shadow hover:bg-gray-100"
+          >
+            <AiOutlineEdit className="w-5 h-5 text-gray-600" />
+          </Link>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowDeleteModal(true);
+            }}
+            className="p-2 bg-white rounded-full shadow hover:bg-gray-100"
+          >
+            <AiOutlineDelete className="w-5 h-5 text-red-500" />
+          </button>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
+            <h3 className="text-xl font-semibold mb-4">Delete Recipe?</h3>
+            <p className="text-gray-600 mb-6">This action cannot be undone.</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
