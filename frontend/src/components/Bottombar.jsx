@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { HomeIcon, MagnifyingGlassIcon, UserCircleIcon, PlusIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/solid";
+import { HomeIcon,PhoneIcon, MagnifyingGlassIcon, UserCircleIcon, PlusIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/solid";
 import { IconButton, Typography } from "@material-tailwind/react";
 import useAuth from "../contexts/useAuthContext";
 import { AiOutlineLogin, AiOutlineLogout } from "react-icons/ai";
@@ -30,11 +30,11 @@ const Bottombar = () => {
         <Typography variant="small" className="text-xs text-orange-700">Create Recipe</Typography>
       </Link>
 
-      <Link to="/chat" className="flex flex-col items-center">
+      <Link to="/contact" className="flex flex-col items-center">
         <IconButton variant="text" color="orange">
-          <ChatBubbleLeftIcon className="h-6 w-6 text-orange-600" />
+          <PhoneIcon className="h-6 w-6 text-orange-600" />
         </IconButton>
-        <Typography variant="small" className="text-xs text-orange-700">Chat</Typography>
+        <Typography variant="small" className="text-xs text-orange-700">Contact</Typography>
       </Link>
 
       {user  ? (

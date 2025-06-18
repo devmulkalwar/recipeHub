@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { FaBookmark, FaPizzaSlice, FaEdit, FaHeart, FaComment, FaShare } from "react-icons/fa";
+import { FaBookmark, FaPizzaSlice, FaHeart, FaComment, FaShare } from "react-icons/fa";
 import { RecipeCard } from "../components/components.js";
 import useAuth from "../contexts/useAuthContext";
 import axios from "axios";
 import useRecipe from "../contexts/useRecipeContext";
 import { toast } from 'react-toastify';
+import { AiOutlineEdit } from 'react-icons/ai';
 
 const Profile = () => {
   const { user: loggedInUser } = useAuth();
@@ -61,6 +62,50 @@ const Profile = () => {
     return num;
   };
 
+  const handleFollow = async () => {
+    if (!loggedInUser) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const response = await axios.post('/api/users/follow', { targetUserId: id });
+      if (response.data.success) {
+        setIsFollowing(true);
+        toast.success('Successfully followed user');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to follow user');
+    }
+  };
+
+  const handleUnfollow = async () => {
+    try {
+      const response = await axios.post('/api/users/unfollow', { targetUserId: id });
+      if (response.data.success) {
+        setIsFollowing(false);
+        toast.success('Successfully unfollowed user');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to unfollow user');
+    }
+  };
+
+  const handleSaveToggle = (recipeId, isSaved) => {
+    if (activeTab === 'saved') {
+      if (!isSaved) {
+        // Remove from saved recipes when unsaved
+        setSavedRecipes(prev => prev.filter(recipe => recipe._id !== recipeId));
+      } else {
+        // Add to saved recipes when saved
+        const recipe = recipes.find(r => r._id === recipeId);
+        if (recipe) {
+          setSavedRecipes(prev => [...prev, recipe]);
+        }
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -84,161 +129,148 @@ const Profile = () => {
   const createdRecipes = userData.recipes || [];
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Profile Header */}
-      <header className="max-w-5xl mx-auto p-4 md:py-8">
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-          {/* Profile Image */}
-          <div className="shrink-0">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden ring-[3px] ring-gray-100">
-              <img
-                src={userData?.profileImage || "/placeholder-avatar.png"}
-                alt={userData?.username}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = "/placeholder-avatar.png";
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Profile Info */}
-          <div className="flex-grow">
-            {/* Username and Edit Profile */}
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-              <h2 className="text-xl font-normal">{userData?.username}</h2>
-              {isOwnProfile && (
-                <Link
-                  to={`/edit-profile/${id}`}
-                  className="px-4 py-1.5 rounded-lg border border-gray-300 font-medium text-sm hover:bg-gray-50"
-                >
-                  Edit profile
-                </Link>
-              )}
-              {!isOwnProfile && (
-                <button
-                  className={`px-6 py-1.5 rounded-lg font-medium text-sm ${
-                    isFollowing
-                      ? "border border-gray-300 hover:bg-gray-50"
-                      : "bg-blue-500 text-white hover:bg-blue-600"
-                  }`}
-                  onClick={() => setIsFollowing(!isFollowing)}
-                >
-                  {isFollowing ? "Following" : "Follow"}
-                </button>
-              )}
-            </div>
-
-            {/* Stats */}
-            <div className="flex justify-center md:justify-start gap-8 my-4 text-sm">
-              <div className="text-center md:text-left">
-                <span className="font-semibold">{formatNumber(createdRecipes.length)}</span>
-                <span className="text-gray-500 ml-1">posts</span>
-              </div>
-              <div className="text-center md:text-left">
-                <span className="font-semibold">{formatNumber(userData?.followers?.length || 0)}</span>
-                <span className="text-gray-500 ml-1">followers</span>
-              </div>
-              <div className="text-center md:text-left">
-                <span className="font-semibold">{formatNumber(userData?.following?.length || 0)}</span>
-                <span className="text-gray-500 ml-1">following</span>
+    <div className="flex-grow flex flex-col items-center bg-gray-50 py-4">
+      <div className="w-full max-w-screen-lg px-4">
+        {/* Profile Header */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            <img
+              src={userData?.profileImage || "/placeholder-avatar.png"}
+              alt={userData?.username}
+              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-orange-100"
+            />
+            <div className="flex-grow text-center sm:text-left">
+              <h1 className="text-2xl font-bold text-gray-800">{userData?.username}</h1>
+              <p className="text-gray-600 mt-2">{userData?.bio || 'No bio yet'}</p>
+              
+              {/* Stats Row */}
+              <div className="flex justify-center sm:justify-start gap-8 mt-4">
+                <div className="text-center">
+                  <span className="block text-xl font-bold text-gray-800">{userRecipes?.length || 0}</span>
+                  <span className="text-sm text-gray-500">posts</span>
+                </div>
+                <div className="text-center">
+                  <span className="block text-xl font-bold text-gray-800">{userData?.followers?.length || 0}</span>
+                  <span className="text-sm text-gray-500">followers</span>
+                </div>
+                <div className="text-center">
+                  <span className="block text-xl font-bold text-gray-800">{userData?.following?.length || 0}</span>
+                  <span className="text-sm text-gray-500">following</span>
+                </div>
               </div>
             </div>
-
-            {/* Bio */}
-            <div className="text-center md:text-left space-y-1">
-              <div className="font-semibold">{userData?.name}</div>
-              <p className="text-sm whitespace-pre-line">{userData?.bio}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Content Tabs */}
-      <div className="border-t border-gray-200">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex">
-            <button
-              className={`flex-1 py-4 text-sm font-medium text-center border-t-2 transition-colors ${
-                activeTab === "created"
-                  ? "border-black text-black"
-                  : "border-transparent text-gray-500 hover:text-black"
-              }`}
-              onClick={() => setActiveTab("created")}
-            >
-              <FaPizzaSlice className="inline-block mr-2 h-3 w-3" />
-              POSTS
-            </button>
-            {isOwnProfile && (
-              <button
-                className={`flex-1 py-4 text-sm font-medium text-center border-t-2 transition-colors ${
-                  activeTab === "saved"
-                    ? "border-black text-black"
-                    : "border-transparent text-gray-500 hover:text-black"
-                }`}
-                onClick={() => setActiveTab("saved")}
+            
+            {/* Action Button */}
+            {isOwnProfile ? (
+              <Link
+                to={`/edit-profile/${id}`}
+                className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
               >
-                <FaBookmark className="inline-block mr-2 h-3 w-3" />
-                SAVED
+                <AiOutlineEdit />
+                Edit Profile
+              </Link>
+            ) : (
+              <button
+                onClick={isFollowing ? handleUnfollow : handleFollow}
+                className={`px-6 py-2 rounded-lg transition-colors ${
+                  isFollowing
+                    ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                    : 'bg-orange-500 text-white hover:bg-orange-600'
+                }`}
+              >
+                {isFollowing ? 'Unfollow' : 'Follow'}
               </button>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Recipe Grid */}
-      <div className="max-w-5xl mx-auto px-4">
-        {activeTab === "created" ? (
-          userRecipes.length === 0 ? (
-            <EmptyState
-              icon={<FaPizzaSlice className="h-8 w-8 text-gray-400" />}
-              title="No Posts Yet"
-              message="When you create recipes, they'll appear here."
-            />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-4">
-              {userRecipes.map((recipe) => (
-                <RecipeCard
-                  key={recipe._id}
-                  recipe={recipe}
-                  cardType={isOwnProfile ? "normal" : "grid"}
-                />
-              ))}
-            </div>
-          )
+        {/* Tabs */}
+        <div className="flex border-b mb-6">
+          <button
+            onClick={() => setActiveTab('created')}
+            className={`flex items-center gap-2 px-6 py-3 ${
+              activeTab === 'created'
+                ? 'border-b-2 border-orange-500 text-orange-500'
+                : 'text-gray-600'
+            }`}
+          >
+            <span>Posts</span>
+          </button>
+          {isOwnProfile && (
+            <button
+              onClick={() => setActiveTab('saved')}
+              className={`flex items-center gap-2 px-6 py-3 ${
+                activeTab === 'saved'
+                  ? 'border-b-2 border-orange-500 text-orange-500'
+                  : 'text-gray-600'
+              }`}
+            >
+              <span>Saved</span>
+            </button>
+          )}
+        </div>
+
+        {/* Content Section */}
+        {loading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent"></div>
+          </div>
         ) : (
-          savedRecipes.length === 0 ? (
-            <EmptyState
-              icon={<FaBookmark className="h-8 w-8 text-gray-400" />}
-              title="No Saved Recipes"
-              message="Save recipes to see them here."
-            />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-4">
-              {savedRecipes.map((recipe) => (
-                <RecipeCard
-                  key={recipe._id}
-                  recipe={recipe}
-                  cardType="normal"
-                  onUnsave={() => handleUnsaveRecipe(recipe._id)}
-                />
-              ))}
-            </div>
-          )
+          <div className="min-h-[300px]">
+            {activeTab === 'created' ? (
+              userRecipes.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userRecipes.map(recipe => (
+                    <RecipeCard
+                      key={recipe._id}
+                      recipe={recipe}
+                      onDelete={(deletedId) => {
+                        setUserRecipes(prev => 
+                          prev.filter(recipe => recipe._id !== deletedId)
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[300px] bg-white rounded-lg shadow-sm">
+                  <p className="text-gray-500 text-lg mb-4">No recipes created yet</p>
+                  <Link
+                    to="/create-recipe"
+                    className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    Create Your First Recipe
+                  </Link>
+                </div>
+              )
+            ) : (
+              savedRecipes.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {savedRecipes.map(recipe => (
+                    <RecipeCard
+                      key={recipe._id}
+                      recipe={recipe}
+                      onSaveToggle={handleSaveToggle}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[300px] bg-white rounded-lg shadow-sm">
+                  <p className="text-gray-500 text-lg mb-4">No saved recipes yet</p>
+                  <Link
+                    to="/recipes"
+                    className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    Explore Recipes
+                  </Link>
+                </div>
+              )
+            )}
+          </div>
         )}
       </div>
     </div>
   );
 };
-
-const EmptyState = ({ icon, title, message }) => (
-  <div className="py-20 text-center">
-    <div className="inline-block p-4 rounded-full bg-gray-100 mb-4">
-      {icon}
-    </div>
-    <h3 className="text-2xl font-light text-gray-900 mb-2">{title}</h3>
-    <p className="text-gray-500">{message}</p>
-  </div>
-);
 
 export default Profile;

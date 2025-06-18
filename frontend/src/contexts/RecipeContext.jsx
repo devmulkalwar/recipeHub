@@ -96,17 +96,22 @@ export const RecipeProvider = ({ children }) => {
       setLoading(true);
       const response = await axios.get('/api/recipes/get-recipes');
       if (response.data.success) {
-        // Update category counts
-        const recipeCounts = response.data.recipes.reduce((acc, recipe) => {
+        // Update recipes state
+        const fetchedRecipes = response.data.recipes;
+        setRecipes(fetchedRecipes);
+
+        // Update category counts correctly
+        const recipeCounts = fetchedRecipes.reduce((acc, recipe) => {
           acc[recipe.category] = (acc[recipe.category] || 0) + 1;
           return acc;
         }, {});
 
+        // Update each category count
         categories.forEach(category => {
           category.count = recipeCounts[category.name] || 0;
         });
 
-        return response.data.recipes;
+        return fetchedRecipes;
       }
       throw new Error(response.data.message || 'Failed to fetch recipes');
     } catch (error) {
@@ -147,24 +152,21 @@ export const RecipeProvider = ({ children }) => {
 
   const likeRecipe = async (recipeId) => {
     try {
-      const response = await axios.put(`/api/recipes/${recipeId}/like`, null, {
-        withCredentials: true
-      });
-
+      const response = await axios.put(`/api/recipes/${recipeId}/like`);
+      
       if (response.data.success) {
-        // Update recipes state
+        // Update local state immediately
         setRecipes(prev => prev.map(recipe => {
           if (recipe._id === recipeId) {
-            const newLikes = Array.isArray(recipe.likes) ? [...recipe.likes] : [];
-            if (!newLikes.includes(response.data.userId)) {
-              newLikes.push(response.data.userId);
-            }
-            return { ...recipe, likes: newLikes };
+            return {
+              ...recipe,
+              likes: [...recipe.likes, response.data.userId],
+              likesCount: recipe.likesCount + 1
+            };
           }
           return recipe;
         }));
       }
-
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to like recipe');
@@ -183,7 +185,8 @@ export const RecipeProvider = ({ children }) => {
           if (recipe._id === recipeId) {
             return {
               ...recipe,
-              likes: recipe.likes.filter(id => id !== response.data.userId)
+              likes: recipe.likes.filter(id => id !== response.data.userId),
+              likesCount: recipe.likesCount - 1
             };
           }
           return recipe;
@@ -198,9 +201,20 @@ export const RecipeProvider = ({ children }) => {
 
   const saveRecipe = async (recipeId) => {
     try {
-      const response = await axios.put(`/api/recipes/${recipeId}/save`, null, {
-        withCredentials: true
-      });
+      const response = await axios.put(`/api/recipes/${recipeId}/save`);
+      
+      if (response.data.success) {
+        // Update local state immediately
+        setRecipes(prev => prev.map(recipe => {
+          if (recipe._id === recipeId) {
+            return {
+              ...recipe,
+              savedBy: [...recipe.savedBy, response.data.userId]
+            };
+          }
+          return recipe;
+        }));
+      }
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to save recipe');
@@ -212,6 +226,20 @@ export const RecipeProvider = ({ children }) => {
       const response = await axios.put(`/api/recipes/${recipeId}/unsave`, null, {
         withCredentials: true
       });
+
+      if (response.data.success) {
+        // Update recipes state
+        setRecipes(prev => prev.map(recipe => {
+          if (recipe._id === recipeId) {
+            return {
+              ...recipe,
+              savedBy: recipe.savedBy.filter(id => id !== response.data.userId)
+            };
+          }
+          return recipe;
+        }));
+      }
+
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to unsave recipe');

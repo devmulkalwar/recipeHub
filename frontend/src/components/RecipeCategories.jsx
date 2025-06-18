@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import useRecipe from '../contexts/useRecipeContext';
 
 const RecipeCategories = () => {
-  const { categories } = useRecipe();
+  const { categories, getAllRecipes } = useRecipe();
   const navigate = useNavigate();
 
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -14,6 +14,11 @@ const RecipeCategories = () => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    // Fetch recipes to update category counts
+    getAllRecipes();
   }, []);
 
   const displayLimit = windowWidth < 768 ? 6 : windowWidth < 1024 ? 10 : 8;

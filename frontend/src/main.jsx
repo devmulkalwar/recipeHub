@@ -7,7 +7,6 @@ import { ThemeProvider } from "@material-tailwind/react";
 // pages import
 import {
   About,
-  Chat,
   Contact,
   CreateRecipe,
   EditProfile,
@@ -73,10 +72,6 @@ const router = createBrowserRouter([
       {
         path: "recipes",
         element: <Recipes />,
-      },
-      {
-        path: "chat",
-        element: <Chat />,
       },
       {
         path: "recipe/:id",

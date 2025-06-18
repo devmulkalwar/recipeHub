@@ -47,12 +47,6 @@ export function Sidebar() {
       icon: PlusOutline, 
       activeIcon: PlusIcon 
     },
-    { 
-      path: "/chat", 
-      label: "Messages", 
-      icon: ChatOutline, 
-      activeIcon: ChatBubbleLeftIcon 
-    },
     ...(user ? [
       {
         path: `/profile/${user?.id}`,
